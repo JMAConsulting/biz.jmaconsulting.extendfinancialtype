@@ -110,13 +110,13 @@ function _extendfinancialtype_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue 
 }
 
 /**
- * @return CRM_Extendfinancialtype_Upgrader
+ * @return CRM_EFT_Upgrader
  */
 function _extendfinancialtype_civix_upgrader() {
-  if (!file_exists(__DIR__.'/CRM/Extendfinancialtype/Upgrader.php')) {
+  if (!file_exists(__DIR__.'/CRM/EFT/Upgrader.php')) {
     return NULL;
   } else {
-    return CRM_Extendfinancialtype_Upgrader_Base::instance();
+    return CRM_EFT_Upgrader_Base::instance();
   }
 }
 
