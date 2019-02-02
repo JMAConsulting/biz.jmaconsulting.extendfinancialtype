@@ -44,6 +44,7 @@
       <th>{ts}Amount{/ts} {if $useForEvent}{help id="id-negative-options"}{/if}</th>
       <th>{ts}Financial Type{/ts}</th>
       <th>{ts}Chapter Code{/ts}</th>
+      <th>{ts}Fund Code{/ts}</th>
     {if $useForEvent}
       <th>{ts}Participant Count{/ts} {help id="id-participant-count"}</th>
       <th>{ts}Max Participant{/ts} {help id="id-participant-max"}</th>
@@ -78,6 +79,7 @@
       <td> {$form.option_amount.$index.html}</td>
       <td>{$form.option_financial_type_id.$index.html}</td>
       <td>{$form.option_chapter_code.$index.html}</td>
+      <td>{$form.option_fund_code.$index.html}</td>
       {if $useForEvent}
           <td>{$form.option_count.$index.html}</td>
           <td>{$form.option_max_value.$index.html}</td>

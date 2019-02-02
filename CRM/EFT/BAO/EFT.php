@@ -34,26 +34,33 @@
  */
 class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
 
-  public function addChapterFund($chapter, $entityId, $entityTable, $isPriceSet = FALSE) {
+  public function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE) {
     if ($entityTable == "civicrm_line_item") {
       $lineItems = civicrm_api3('LineItem', 'get', [
         'contribution_id' => $entityId,
       ])['values'];
       foreach ($lineItems as $lineItem) {
         // Retrieve chapters and funds.
-        $lineItemChapter = CRM_Core_DAO::singleValueQuery("SELECT
-          chapter_code
+        $lineItemChapterFund = CRM_Core_DAO::executeQuery("SELECT
+          chapter_code, fund_code
           FROM civicrm_chapter_entity
           WHERE entity_table = 'civicrm_price_field_value'
-          AND entity_id = {$lineItem['price_field_value_id']}");
-        if ($lineItemChapter) {
-          $eft = new CRM_EFT_BAO_EFT();
-          $eft->entity_id = $lineItem['id'];
-          $eft->entity_table = $entityTable;
-          $eft->find(TRUE);
-          $eft->chapter_code = $lineItemChapter;
-          $eft->save();
+          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll()[0];
+        $eft = new CRM_EFT_BAO_EFT();
+        $eft->entity_id = $lineItem['id'];
+        $eft->entity_table = $entityTable;
+        $eft->find(TRUE);
+        if (!empty($lineItemChapterFund)) {
+          // We set the chapter code and fund code for each individual price field option if found.
+          $eft->chapter_code = $lineItemChapterFund['chapter_code'];
+          $eft->fund_code = $lineItemChapterFund['fund_code'];
         }
+        else {
+          // We set the chapter and fund code for the whole contribution.
+          $eft->chapter_code = $chapter;
+          $eft->fund_code = $fund;
+        }
+        $eft->save();
       }
       if (!$isPriceSet && $chapter) {
         // Add chapter code for contribution as well.
@@ -62,6 +69,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         $eft->entity_table = "civicrm_contribution";
         $eft->find(TRUE);
         $eft->chapter_code = $chapter;
+        $eft->fund_code = $fund;
         $eft->save();
       }
     }
@@ -71,26 +79,34 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       ])['values'];
       foreach ($lineItems as $lineItem) {
         // Retrieve chapters and funds.
-        $lineItemChapter = CRM_Core_DAO::singleValueQuery("SELECT
-          chapter_code
+        $lineItemChapterFund = CRM_Core_DAO::executeQuery("SELECT
+          chapter_code, fund_code
           FROM civicrm_chapter_entity
           WHERE entity_table = 'civicrm_price_field_value'
-          AND entity_id = {$lineItem['price_field_value_id']}");
-        if ($lineItemChapter) {
-          $eft = new CRM_EFT_BAO_EFT();
-          $eft->entity_id = $lineItem['id'];
-          $eft->entity_table = "civicrm_line_item";
-          $eft->find(TRUE);
-          $eft->chapter_code = $lineItemChapter;
-          $eft->save();
+          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll()[0];
+        $eft = new CRM_EFT_BAO_EFT();
+        $eft->entity_id = $lineItem['id'];
+        $eft->entity_table = "civicrm_line_item";
+        $eft->find(TRUE);
+        if (!empty($lineItemChapterFund)) {
+          $eft->chapter_code = $lineItemChapterFund['chapter_code'];
+          $eft->fund_code = $lineItemChapterFund['fund_code'];
         }
+        else {
+          $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page")['chapter_code'];
+          $eft->chapter_code = $chapterFund['chapter_code'];
+          $eft->fund_code = $chapterFund['fund_code'];
+        }
+        $eft->save();
       }
       // Add chapter code for contribution as well.
       $eft = new CRM_EFT_BAO_EFT();
       $eft->entity_id = $entityId;
       $eft->entity_table = "civicrm_contribution";
       $eft->find(TRUE);
-      $eft->chapter_code = self::getChapterFund($chapter, "civicrm_contribution_page")['chapter_code'];
+      $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page")['chapter_code'];
+      $eft->chapter_code = $chapterFund['chapter_code'];
+      $eft->fund_code = $chapterFund['fund_code'];
       $eft->save();
     }
     if (in_array($entityTable, [
@@ -105,6 +121,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $eft->entity_table = $entityTable;
       $eft->find(TRUE);
       $eft->chapter_code = $chapter;
+      $eft->fund_code = $fund;
       $eft->save();
     }
     if ($entityTable == "civicrm_price_field") {
@@ -114,6 +131,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $eft->entity_table = $entityTable;
       $eft->find(TRUE);
       $eft->chapter_code = $chapter;
+      $eft->fund_code = $fund;
       $eft->save();
 
       // Price Field Value
@@ -122,6 +140,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $eft->entity_table = "civicrm_price_field_value";
       $eft->find(TRUE);
       $eft->chapter_code = $chapter;
+      $eft->fund_code = $fund;
       $eft->save();
     }
     if ($entityTable == "civicrm_price_field_value") {
@@ -129,6 +148,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         $priceFieldValues = CRM_Core_DAO::executeQuery("SELECT id, label FROM civicrm_price_field_value WHERE price_field_id = {$entityId}")->fetchAll();
         $priceLabels = $chapter['option_label'];
         $chapters = $chapter['option_chapter_code'];
+        $funds = $chapter['option_fund_code'];
         foreach ($priceFieldValues as $key => $priceFieldValue) {
           $chapterKey = array_search($priceFieldValue['label'], $priceLabels);
           $eft = new CRM_EFT_BAO_EFT();
@@ -136,6 +156,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $eft->entity_table = "civicrm_price_field_value";
           $eft->find(TRUE);
           $eft->chapter_code = $chapters[$chapterKey];
+          $eft->fund_code = $funds[$chapterKey];
           $eft->save();
         }
       }
@@ -145,13 +166,14 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         $eft->entity_table = $entityTable;
         $eft->find(TRUE);
         $eft->chapter_code = $chapter;
+        $eft->fund_code = $fund;
         $eft->save();
       }
     }
   }
 
   public function getChapterFund($entityId, $entityTable) {
-    $chapterCode = CRM_Core_DAO::singleValueQuery("SELECT chapter_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'");
-    return ['chapter_code' => $chapterCode];
+    $chapterFundCode = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'")->fetchAll()[0];
+    return ['chapter_code' => $chapterFundCode['chapter_code'], 'fund_code' => $chapterFundCode['fund_code']];
   }
 }

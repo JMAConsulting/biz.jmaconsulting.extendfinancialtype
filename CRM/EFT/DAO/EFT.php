@@ -61,6 +61,12 @@ class CRM_EFT_DAO_EFT extends CRM_Core_DAO
    * @var int
    */
   public $chapter_code;
+  /**
+   * Fund Code.
+   *
+   * @var int
+   */
+  public $fund_code;
 
   /**
    * class constructor
@@ -118,6 +124,11 @@ class CRM_EFT_DAO_EFT extends CRM_Core_DAO
           'type' => CRM_Utils_Type::T_INT,
           'title' => ts('Chapter Code'),
         ),
+        'fund_code' => array(
+          'name' => 'fund_code',
+          'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Fund Code'),
+        ),
       );
     }
     return self::$_fields;
@@ -137,6 +148,7 @@ class CRM_EFT_DAO_EFT extends CRM_Core_DAO
         'entity_id' => 'entity_id',
         'entity_table' => 'entity_table',
         'chapter_code' => 'chapter_code',
+        'fund_code' => 'fund_code',
       );
     }
     return self::$_fieldKeys;
