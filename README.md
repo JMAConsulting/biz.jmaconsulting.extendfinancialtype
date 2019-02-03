@@ -1,1 +1,1 @@
-# biz.jmaconsulting.financialtypechapter
+# biz.jmaconsulting.extendfinancialtype
