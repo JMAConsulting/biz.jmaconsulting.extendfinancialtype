@@ -198,6 +198,12 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
   }
 }
 
+function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRef) {
+  if ($op == "delete") {
+    CRM_EFT_BAO_EFT::deleteChapterFundEntity($objectId, $objectName);
+  }
+}
+
 function extendfinancialtype_civicrm_postSave_civicrm_price_set($dao) {
   if ($dao->id) {
     CRM_Core_Smarty::singleton()->assign('eft_price_set_id', $dao->id);
@@ -228,17 +234,17 @@ function extendfinancialtype_civicrm_postSave_civicrm_membership_type($dao) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
  */
 function extendfinancialtype_civicrm_postProcess($formName, &$form) {
-  if ($chapter = CRM_Utils_Array::value('chapter_code', $form->_submitValues) && $fund = CRM_Utils_Array::value('fund_code', $form->_submitValues)) {
+  if (CRM_Utils_Array::value('chapter_code', $form->_submitValues) && CRM_Utils_Array::value('fund_code', $form->_submitValues)) {
     switch ($formName) {
     case "CRM_Price_Form_Set":
       $sid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_set_id');
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $sid, "civicrm_price_set");
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $sid, "civicrm_price_set");
       break;
 
     case "CRM_Price_Form_Field":
       if ($form->_submitValues['html_type'] == "Text") {
         $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
-        CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $fid, "civicrm_price_field");
+        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $fid, "civicrm_price_field");
       }
       else {
         // We need to save the chapter and fund for each price field value rather than price field.
@@ -249,20 +255,20 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     case "CRM_Price_Form_Option":
       $oid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_value_id');
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $oid, "civicrm_price_field_value", FALSE);
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $oid, "civicrm_price_field_value", FALSE);
       break;
 
     case "CRM_Contribute_Form_ContributionPage_Settings":
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $form->getVar('_id'), "civicrm_contribution_page");
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->getVar('_id'), "civicrm_contribution_page");
       break;
 
     case "CRM_Event_Form_ManageEvent_Fee":
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $form->_id, "civicrm_event");
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_event");
       break;
 
     case "CRM_Member_Form_MembershipType":
       $mid = CRM_Core_Smarty::singleton()->get_template_vars('eft_membership_type_id');
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $mid, "civicrm_membership_type");
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $mid, "civicrm_membership_type");
       break;
 
     case "CRM_Contribute_Form_Contribution":
@@ -270,14 +276,14 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       if (CRM_Utils_Array::value('price_set_id', $form->_submitValues)) {
         $isPriceSet = TRUE;
       }
-      CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $form->_id, "civicrm_line_item", $isPriceSet);
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_line_item", $isPriceSet);
       break;
 
     case "CRM_Event_Form_Participant":
       // Add chapter code for main contribution.
       $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_participant_payment WHERE participant_id = {$form->_id}");
       if ($contributionId) {
-        CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $contributionId, "civicrm_line_item");
+        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $contributionId, "civicrm_line_item");
       }
       break;
 
@@ -285,7 +291,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       // Add chapter code for main contribution.
       $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE membership_id = {$form->_id}");
       if ($contributionId) {
-        CRM_EFT_BAO_EFT::addChapterFund($chapter, $fund, $contributionId, "civicrm_line_item");
+        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $contributionId, "civicrm_line_item");
       }
       break;
 

@@ -34,7 +34,7 @@
  */
 class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
 
-  public function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE) {
+  public static function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE) {
     if ($entityTable == "civicrm_line_item") {
       $lineItems = civicrm_api3('LineItem', 'get', [
         'contribution_id' => $entityId,
@@ -66,7 +66,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         // Add chapter code for contribution as well.
         $params = [
           'entity_id' => $entityId,
-          'entity_id' => "civicrm_contribution",
+          'entity_table' => "civicrm_contribution",
           'chapter' => $chapter,
           'fund' => $fund,
         ];
@@ -103,7 +103,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page")['chapter_code'];
       $params = [
         'entity_id' => $entityId,
-        'entity_id' => "civicrm_contribution",
+        'entity_table' => "civicrm_contribution",
         'chapter' => $chapterFund['chapter_code'],
         'fund' => $chapterFund['fund_code'],
       ];
@@ -118,7 +118,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     ])) {
       $params = [
         'entity_id' => $entityId,
-        'entity_id' => $entityTable,
+        'entity_table' => $entityTable,
         'chapter' => $chapter,
         'fund' => $fund,
       ];
@@ -128,7 +128,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       // We save the same for price field and price field value.
       $params = [
         'entity_id' => $entityId,
-        'entity_id' => $entityTable,
+        'entity_table' => $entityTable,
         'chapter' => $chapter,
         'fund' => $fund,
       ];
@@ -137,7 +137,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       // Price Field Value
       $params = [
         'entity_id' => CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_price_field_value WHERE price_field_id = {$entityId}"),
-        'entity_id' => "civicrm_price_field_value",
+        'entity_table' => "civicrm_price_field_value",
         'chapter' => $chapter,
         'fund' => $fund,
       ];
@@ -153,7 +153,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $chapterKey = array_search($priceFieldValue['label'], $priceLabels);
           $params = [
             'entity_id' => $priceFieldValue['id'],
-            'entity_id' => "civicrm_price_field_value",
+            'entity_table' => "civicrm_price_field_value",
             'chapter' => $chapters[$chapterKey],
             'fund' => $funds[$chapterKey],
           ];
@@ -162,7 +162,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       else {
         $params = [
           'entity_id' => $entityId,
-          'entity_id' => $entityTable,
+          'entity_table' => $entityTable,
           'chapter' => $chapter,
           'fund' => $fund,
         ];
@@ -171,12 +171,12 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     }
   }
 
-  public function getChapterFund($entityId, $entityTable) {
+  public static function getChapterFund($entityId, $entityTable) {
     $chapterFundCode = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'")->fetchAll()[0];
     return ['chapter_code' => $chapterFundCode['chapter_code'], 'fund_code' => $chapterFundCode['fund_code']];
   }
 
-  public function saveChapterFund($params) {
+  public static function saveChapterFund($params) {
     $eft = new CRM_EFT_BAO_EFT();
     $eft->entity_id = $params['entity_id'];
     $eft->entity_table = $params['entity_table'];
@@ -184,5 +184,35 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     $eft->chapter_code = $params['chapter'];
     $eft->fund_code = $params['fund'];
     $eft->save();
+  }
+
+  public static function deleteChapterFundEntity($id, $entity) {
+    switch ($entity) {
+    case "Contribution":
+      $lineItems = civicrm_api3('LineItem', 'get', [
+        'contribution_id' => $id,
+      ])['values'];
+      if (!empty($lineItems)) {
+        foreach ($lineItems as $lid => $lineItem) {
+          self::deleteEntity($lid, 'civicrm_line_item');
+        }
+      }
+      self::deleteEntity($id, 'civicrm_contribution');
+      break;
+    case "Event":
+      self::deleteEntity($id, 'civicrm_event');
+      break;
+    default:
+      break;
+    }
+  }
+
+  public static function deleteEntity($id, $entity) {
+    $eft = new CRM_EFT_BAO_EFT();
+    $eft->entity_id = $id;
+    $eft->entity_table = $entity;
+    $eft->find(TRUE);
+    $eft->delete();
+    $eft->free();
   }
 }
