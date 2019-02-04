@@ -44,10 +44,10 @@ CRM.$( function($) {
     if (jQuery.inArray(ft, fts) == -1) {
       $('#chapter_code').val('1000');
       $('#chapter_code').trigger('change');
-      $('#chapter_code').attr('disabled', true);
+      $('#chapter_code').prop('disabled', true);
     }
     else {
-      $('#chapter_code').attr("disabled", false);
+      $('#chapter_code').prop("disabled", false);
     }
   });
 });
