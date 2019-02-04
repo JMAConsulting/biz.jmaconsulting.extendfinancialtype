@@ -204,6 +204,28 @@ function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRe
   }
 }
 
+function extendfinancialtype_civicrm_postSave_civicrm_contribution_soft($dao) {
+  // Save appropriate gift types for In Honour Of and In Memory Of.
+  if ($dao->id) {
+    $softCreditTypes = CRM_Core_OptionGroup::values('soft_credit_type');
+    if (in_array($softCreditTypes[$dao->soft_credit_type_id], ["In Honor of", "In Memory of"])) {
+      // If financial type ID of contribution is general donation, change financial account id.
+      $ft = CRM_Core_DAO::singleValueQuery("SELECT f.name
+        FROM civicrm_contribution c
+        INNER JOIN civicrm_financial_type f ON f.id = c.financial_type_id
+        WHERE c.id = {$dao->contribution_id}");
+      if ($ft == "General Donation") {
+        // We change the financial account in this case to Memorial Donation.
+        $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE accounting_code = 4012");
+        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($dao->contribution_id)[0][1];
+        if ($fi) {
+          civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]);
+        }
+      }
+    }
+  }
+}
+
 function extendfinancialtype_civicrm_postSave_civicrm_price_set($dao) {
   if ($dao->id) {
     CRM_Core_Smarty::singleton()->assign('eft_price_set_id', $dao->id);
