@@ -188,7 +188,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     // Add fund codes.
     $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code',
-      ts('Chapter Code'),
+      ts('Fund Code'),
       $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
@@ -294,6 +294,9 @@ function extendfinancialtype_civicrm_postSave_civicrm_membership_type($dao) {
  */
 function extendfinancialtype_civicrm_postProcess($formName, &$form) {
   if (CRM_Utils_Array::value('chapter_code', $form->_submitValues) && CRM_Utils_Array::value('fund_code', $form->_submitValues)) {
+    if ($form->_action & CRM_Core_Action::UPDATE) {
+      CRM_Core_Session::singleton()->set('noUpdate', TRUE);
+    }
     switch ($formName) {
     case "CRM_Price_Form_Set":
       $sid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_set_id');
@@ -335,7 +338,10 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       if (CRM_Utils_Array::value('price_set_id', $form->_submitValues)) {
         $isPriceSet = TRUE;
       }
-      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_line_item", $isPriceSet);
+      if (!CRM_Core_Session::singleton()->get('noUpdate')) {
+        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_line_item", $isPriceSet);
+      }
+      CRM_Core_Session::singleton()->set('noUpdate', FALSE);
       break;
 
     case "CRM_Event_Form_Participant":
