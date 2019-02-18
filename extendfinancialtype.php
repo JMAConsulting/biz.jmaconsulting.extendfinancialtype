@@ -127,7 +127,9 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $fund = $fundCodes[$codes['fund_code']];
       $string = '&nbsp;&nbsp;&nbsp;&nbsp;';
       $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund ID</strong></span>:&nbsp;$acCode-$chapter";
-      $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
+      if ($fund) {
+        $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
+      }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
            $.each($('.crm-contribution-view-form-block table > tbody > tr:nth-child(2)'), function() {
