@@ -113,6 +113,41 @@ function extendfinancialtype_civicrm_alterSettingsFolders(&$metaDataFolders = NU
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function extendfinancialtype_civicrm_buildForm($formName, &$form) {
+  if ($formName == 'CRM_Contribute_Form_ContributionView') {
+    $contributionId = $form->get('id');
+    // SELECT chapter code and FA code as fund ID.
+    $fa = CRM_Contribute_PseudoConstant::getRelationalFinancialAccount(CRM_Core_Smarty::singleton()->get_template_vars('financial_type_id'), 'Income Account is');
+    if ($fa) {
+      $acCode = CRM_Core_DAO::singleValueQuery("SELECT accounting_code FROM civicrm_financial_account WHERE id = {$fa}");
+      $codes = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_table = 'civicrm_contribution' AND entity_id = {$contributionId}")->fetchAll()[0];
+    }
+    if ($acCode && !empty($codes)) {
+      $chapter = $codes['chapter_code'];
+      $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+      $fund = $fundCodes[$codes['fund_code']];
+      $string = '&nbsp;&nbsp;&nbsp;&nbsp;';
+      $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund ID</strong></span>:&nbsp;$acCode-$chapter";
+      $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
+      CRM_Core_Resources::singleton()->addScript(
+       "CRM.$(function($) {
+           $.each($('.crm-contribution-view-form-block table > tbody > tr:nth-child(2)'), function() {
+           if ($('td', this).length == 2) {
+             $('td:nth-child(2)', this).append('$string');
+           }
+         });
+       });"
+      );
+    }
+  }
+  if ($formName == "CRM_Event_Form_ManageEvent_Registration") {
+    $cid = CRM_Core_Session::singleton()->get('userID');
+    if ($cid) {
+      $details = CRM_Core_DAO::executeQuery("SELECT display_name, email FROM civicrm_contact c INNER JOIN civicrm_email e ON e.contact_id = c.id WHERE c.id = {$cid} AND e.is_primary = 1")->fetchAll()[0];
+      if (!empty($details)) {
+        $form->setDefaults(['confirm_from_name' => $details['display_name'], 'confirm_from_email' => $details['email']]);
+      }
+    }
+  }
   if (!in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE])) {
     return;
   }
