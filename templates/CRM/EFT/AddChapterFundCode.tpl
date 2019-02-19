@@ -1,4 +1,4 @@
-<div id="chapter_code_section">{$form.chapter_code.html} {$form.fund_code.html}</div>
+<div id="chapter_code_section"><br/>{$form.chapter_code.label} {$form.chapter_code.html} <br/> <br/>{$form.fund_code.label}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {$form.fund_code.html}</div>
 
 {literal}
 <script type="text/javascript">

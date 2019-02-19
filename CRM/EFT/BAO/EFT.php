@@ -34,6 +34,14 @@
  */
 class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
 
+  public static function getCodes($ogName) {
+    $codes = CRM_Core_DAO::executeQuery("SELECT v.value as code, CONCAT(v.value, ' ', v.label) as label FROM civicrm_option_value v INNER JOIN civicrm_option_group g ON g.id = v.option_group_id WHERE g.name = '{$ogName}'")->fetchAll();
+    foreach ($codes as $code) {
+      $info[$code['code']] = $code['label'];
+    }
+    return $info;
+  }
+
   public static function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE) {
     if ($entityTable == "civicrm_line_item") {
       $lineItems = civicrm_api3('LineItem', 'get', [

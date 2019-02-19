@@ -156,7 +156,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
   if ($formName == "CRM_Price_Form_Field") {
 
     // Add chapter codes.
-    $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+    $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_chapter_code[' . $i . ']',
         ts('Chapter Code'),
@@ -180,7 +180,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       return;
     }
     // Add chapter codes.
-    $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+    $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code',
       ts('Chapter Code'),
       $chapterCodes
