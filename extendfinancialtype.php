@@ -176,7 +176,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
   }
   if (array_key_exists('financial_type_id', $form->_elementIndex)
       || ($formName == "CRM_Event_Form_Participant" && ($form->_action & CRM_Core_Action::ADD))) {
-    if (($form->_action & CRM_Core_Action::UPDATE) && $formName == "CRM_Member_Form_Membership") {
+    if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership" || $formName == "CRM_Contribute_Form_Contribution")) {
       return;
     }
     // Add chapter codes.
@@ -338,10 +338,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       if (CRM_Utils_Array::value('price_set_id', $form->_submitValues)) {
         $isPriceSet = TRUE;
       }
-      if (!CRM_Core_Session::singleton()->get('noUpdate')) {
-        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_line_item", $isPriceSet);
-      }
-      CRM_Core_Session::singleton()->set('noUpdate', FALSE);
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_line_item", $isPriceSet);
       break;
 
     case "CRM_Event_Form_Participant":
