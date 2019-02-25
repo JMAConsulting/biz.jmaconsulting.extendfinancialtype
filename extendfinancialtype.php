@@ -422,6 +422,24 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           CRM_EFT_BAO_EFT::saveChapterFund($params);
         }
       }
+      $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0][1];
+      if ($fi) {
+        $entry = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_chapter_entity WHERE entity_id = {$fi} AND entity_table = 'civicrm_financial_item'");
+        if (!$entry) {
+          $lastFi = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code
+            FROM civicrm_financial_item fi
+            INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
+            INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = fi.id AND ce.entity_table = 'civicrm_financial_item'
+            WHERE li.contribution_id = {$form->_id} ORDER BY fi.id DESC LIMIT 1")->fetchAll()[0];
+          $params = [
+            "entity_id" => $fi,
+            "entity_table" => "civicrm_financial_item",
+            "chapter" => $lastFi['chapter_code'],
+            "fund" => $lastFi['fund_code'],
+          ];
+          CRM_EFT_BAO_EFT::saveChapterFund($params);
+        }
+      }
       break;
     default:
       break;
