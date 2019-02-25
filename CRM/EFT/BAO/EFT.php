@@ -53,15 +53,15 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           chapter_code, fund_code
           FROM civicrm_chapter_entity
           WHERE entity_table = 'civicrm_price_field_value'
-          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll()[0];
+          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll();
         $params = [
           'entity_id' => $lineItem['id'],
           'entity_table' => $entityTable,
         ];
         if (!empty($lineItemChapterFund)) {
           // We set the chapter code and fund code for each individual price field option if found.
-          $params['chapter'] = $lineItemChapterFund['chapter_code'];
-          $params['fund'] = $lineItemChapterFund['fund_code'];
+          $params['chapter'] = $chapter = $lineItemChapterFund[0]['chapter_code'];
+          $params['fund'] = $fund = $lineItemChapterFund[0]['fund_code'];
         }
         else {
           // We set the chapter and fund code for the whole contribution.
@@ -69,8 +69,32 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $params['fund'] = $fund;
         }
         self::saveChapterFund($params);
+
+        // We also set the chapter and code for the corresponding financial item for this line item.
+        $financialItem = civicrm_api3('FinancialItem', 'getsingle', [
+          'return' => ["id"],
+          'entity_id' => $lineItem['id'],
+          'entity_table' => $entityTable,
+        ])['id'];
+        $params = [
+          'entity_id' => $financialItem,
+          'entity_table' => "civicrm_financial_item",
+          'chapter' => $chapter,
+          'fund' => $fund,
+        ];
+        self::saveChapterFund($params);
+
+        if ($isPriceSet) {
+          // And for the corresponding financial trxn for this contribution.
+          $financialTrxn = civicrm_api3('EntityFinancialTrxn', 'getvalue', [
+            'return' => "financial_trxn_id",
+            'entity_id' => $financialItem,
+            'entity_table' => "civicrm_financial_item",
+          ]);
+          $fts[] = $financialTrxn;
+        }
       }
-      if (!$isPriceSet && $chapter) {
+      if ($chapter && $fund) {
         // Add chapter code for contribution as well.
         $params = [
           'entity_id' => $entityId,
@@ -79,6 +103,10 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           'fund' => $fund,
         ];
         self::saveChapterFund($params);
+      }
+      
+      if ($fts) {
+        return $fts;
       }
     }
     if ($entityTable == "civicrm_contribution_page_online") {
@@ -179,6 +207,20 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     }
   }
 
+  public static function addTrxnChapterFund($fts, $params) {
+    if ($fts) { 
+      foreach ($fts as $ft) {
+        $params = [
+          "entity_id" => $ft,
+          "entity_table" => "civicrm_financial_trxn",
+          "chapter" => CRM_Utils_Array::value('chapter_code_trxn', $params),
+          "fund" => CRM_Utils_Array::value('fund_code_trxn', $params),
+        ];
+        self::saveChapterFund($params);
+      }
+    }
+  }
+
   public static function getChapterFund($entityId, $entityTable) {
     $chapterFundCode = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'")->fetchAll()[0];
     return ['chapter_code' => $chapterFundCode['chapter_code'], 'fund_code' => $chapterFundCode['fund_code']];
@@ -203,6 +245,18 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       if (!empty($lineItems)) {
         foreach ($lineItems as $lid => $lineItem) {
           self::deleteEntity($lid, 'civicrm_line_item');
+          $financialItem = civicrm_api3('FinancialItem', 'getsingle', [
+            'return' => ["id"],
+            'entity_id' => $lineItem['id'],
+            'entity_table' => $entityTable,
+          ])['id'];
+          self::deleteEntity($financialItem, 'civicrm_financial_item');
+          $financialTrxn = civicrm_api3('EntityFinancialTrxn', 'getvalue', [
+            'return' => "financial_trxn_id",
+            'entity_id' => $financialItem,
+            'entity_table' => "civicrm_financial_item",
+          ]);
+          self::deleteEntity($financialTrxn, 'civicrm_financial_trxn');
         }
       }
       self::deleteEntity($id, 'civicrm_contribution');

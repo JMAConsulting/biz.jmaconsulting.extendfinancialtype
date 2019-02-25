@@ -239,8 +239,6 @@ class CRM_EFT_Upgrader_Base {
 
   public function onInstall() {
     $files = glob($this->extensionDir . '/sql/*_install.sql');
-    CRM_Core_Error::debug( '$files', $files );
-    exit;
     if (is_array($files)) {
       foreach ($files as $file) {
         CRM_Utils_File::sourceSQLFile(CIVICRM_DSN, $file);
