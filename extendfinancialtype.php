@@ -1,4 +1,6 @@
 <?php
+define('CHAPTER', 'custom_1');
+define('FUND', 'custom_2');
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -448,6 +450,11 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
-    CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], NULL, $form->_contributionID, "civicrm_contribution_page_online");
+    $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], NULL, $form->_contributionID, "civicrm_contribution_page_online");
+    $params = [
+      'chapter_code_trxn' => CRM_Utils_Array::value(CHAPTER, $form->_submitValues),
+      'fund_code_trxn' => CRM_Utils_Array::value(FUND, $form->_submitValues),
+    ];
+    CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $params);
   }
 }
