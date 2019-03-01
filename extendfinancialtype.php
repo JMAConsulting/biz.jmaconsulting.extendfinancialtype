@@ -458,3 +458,44 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $params);
   }
 }
+
+function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
+  if ('CRM_Report_Form_Contribute_Bookkeeping' == get_class($object)) {
+    if ($varType == 'columns') {
+      $var['civicrm_chapter_entity']['fields']['chapter_code_from'] = array(
+        'name' => 'chapter_code_from',
+        'title' => ts('Chapter Code - Credit'),
+        'dbAlias' => 'CONCAT(ce_from.chapter_code, " ", covc_from.label)',
+      );
+      $var['civicrm_chapter_entity']['fields']['chapter_code_to'] = array(
+        'name' => 'chapter_code_to',
+        'title' => ts('Chapter Code - Debit'),
+        'dbAlias' => 'CONCAT(ce_to.chapter_code, " ", covc_to.label)',
+      );
+      $var['civicrm_chapter_entity']['fields']['fund_code_from'] = array(
+        'name' => 'fund_code_from',
+        'title' => ts('Fund Code - Credit'),
+        'dbAlias' => 'covf_from.label',
+      );
+      $var['civicrm_chapter_entity']['fields']['fund_code_to'] = array(
+        'name' => 'fund_code_to',
+        'title' => ts('Fund Code - Debit'),
+        'dbAlias' => 'covf_to.label',
+      );
+    }
+    if ($varType == 'sql') {
+      $from = $var->getVar('_from');
+      $from .= "
+      LEFT JOIN civicrm_line_item li ON li.contribution_id = contribution_civireport.id
+      LEFT JOIN civicrm_chapter_entity ce_from ON ce_from.entity_id = li.id AND ce_from.entity_table = 'civicrm_line_item'
+      LEFT JOIN civicrm_chapter_entity ce_to ON ce_to.entity_id = financial_trxn_civireport.id AND ce_to.entity_table = 'civicrm_financial_trxn'
+      LEFT JOIN civicrm_option_group cogf ON cogf.name = 'fund_codes'
+      LEFT JOIN civicrm_option_group cogc ON cogc.name = 'chapter_codes'
+      LEFT JOIN civicrm_option_value covf_from ON (covf_from.value = ce_from.fund_code AND covf_from.option_group_id = cogf.id)
+      LEFT JOIN civicrm_option_value covf_to ON (covf_to.value = ce_to.fund_code AND covf_to.option_group_id = cogf.id)
+      LEFT JOIN civicrm_option_value covc_from ON (covc_from.value = ce_from.chapter_code AND covc_from.option_group_id = cogc.id)
+      LEFT JOIN civicrm_option_value covc_to ON (covc_to.value = ce_to.chapter_code AND covc_to.option_group_id = cogc.id)";
+      $var->setVar('_from', $from);
+    }
+  }
+}
