@@ -162,7 +162,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_chapter_code[' . $i . ']',
         ts('Chapter Code'),
-        $chapterCodes
+        [ts('- select -')] + $chapterCodes
       );
     }
 
@@ -171,7 +171,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_fund_code[' . $i . ']',
         ts('Fund Code'),
-        $fundCodes
+        [ts('- select -')] + $fundCodes
       );
     }
     
@@ -185,13 +185,13 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code',
       ts('Chapter Code'),
-      $chapterCodes
+      [ts('- select -')] + $chapterCodes
     );
     // Add fund codes.
     $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
     $form->add('select', 'fund_code',
       ts('Fund Code'),
-      $fundCodes
+      [ts('- select -')] + $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/EFT/AddChapterFundCode.tpl',
@@ -208,13 +208,13 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code_trxn',
       ts('Chapter Code'),
-      $chapterCodes
+      [ts('- select -')] + $chapterCodes
     );
     // Add fund codes.
     $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
     $form->add('select', 'fund_code_trxn',
       ts('Fund Code'),
-      $fundCodes
+      [ts('- select -')] + $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/EFT/AddChapterFundCodeTrxn.tpl',
@@ -475,12 +475,12 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_chapter_entity']['fields']['fund_code_from'] = array(
         'name' => 'fund_code_from',
         'title' => ts('Fund Code - Credit'),
-        'dbAlias' => 'covf_from.label',
+        'dbAlias' => 'CONCAT(ce_from.fund_code, " ", covf_from.label)',
       );
       $var['civicrm_chapter_entity']['fields']['fund_code_to'] = array(
         'name' => 'fund_code_to',
         'title' => ts('Fund Code - Debit'),
-        'dbAlias' => 'covf_to.label',
+        'dbAlias' => 'CONCAT(ce_to.fund_code, " ", covf_to.label)',
       );
     }
     if ($varType == 'sql') {
