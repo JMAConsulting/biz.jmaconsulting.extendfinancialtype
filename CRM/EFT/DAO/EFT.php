@@ -93,6 +93,19 @@ class CRM_EFT_DAO_EFT extends CRM_Core_DAO
     }
     return self::$_links;
   }
+
+  /**
+   * Returns the list of fields that can be exported
+   *
+   * @param bool $prefix
+   *
+   * @return array
+   */
+  public static function &export($prefix = FALSE) {
+    $r = CRM_Core_DAO_AllCoreTables::getExports(__CLASS__, 'chapter_entity', $prefix, []);
+    return $r;
+  }
+
   /**
    * returns all the column names of this table
    *

@@ -167,7 +167,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     }
 
     // Add fund codes.
-    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_fund_code[' . $i . ']',
         ts('Fund Code'),
@@ -211,7 +211,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $chapterCodes
     );
     // Add fund codes.
-    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
     $form->add('select', 'fund_code_trxn',
       ts('Fund Code'),
       $fundCodes
