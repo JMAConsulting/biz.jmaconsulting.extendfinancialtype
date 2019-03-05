@@ -130,7 +130,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $string = '&nbsp;&nbsp;&nbsp;&nbsp;';
       $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund ID</strong></span>:&nbsp;$acCode-$chapter";
       if ($fund) {
-        $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;" . $codes['fund_code'] . " " . $fund;
+        $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
       }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
@@ -167,7 +167,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     }
 
     // Add fund codes.
-    $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_fund_code[' . $i . ']',
         ts('Fund Code'),
@@ -188,7 +188,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       [ts('- select -')] + $chapterCodes
     );
     // Add fund codes.
-    $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code',
       ts('Fund Code'),
       [ts('- select -')] + $fundCodes
@@ -211,7 +211,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       [ts('- select -')] + $chapterCodes
     );
     // Add fund codes.
-    $fundCodes = CRM_EFT_BAO_EFT::getCodes('fund_codes');
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code_trxn',
       ts('Fund Code'),
       [ts('- select -')] + $fundCodes
