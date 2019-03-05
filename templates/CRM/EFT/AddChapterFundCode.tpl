@@ -4,9 +4,18 @@
 <script type="text/javascript">
 CRM.$( function($) {
   $( document ).ajaxComplete(function( event, xhr, settings ) {
-    $('#chapter_code_section').insertAfter($('#financial_type_id'));
+    if ($('#financial_type_id').length) {
+      $('#chapter_code_section').show();
+      $('#chapter_code_section').insertAfter($('#financial_type_id'));
+    }
   });
-  $('#chapter_code_section').insertAfter($('#financial_type_id'));
+  if ($('#financial_type_id').length) {
+    $('#chapter_code_section').show();
+    $('#chapter_code_section').insertAfter($('#financial_type_id'));
+  }
+  else {
+    $('#chapter_code_section').hide();
+  }
 
 
   $('#chapter_code').on('change', function (e) {

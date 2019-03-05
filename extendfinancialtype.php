@@ -143,6 +143,54 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       );
     }
   }
+  if ($formName == 'CRM_Member_Form_MembershipView') {
+    $memberId = $form->get('id');
+    $codes = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_table = 'civicrm_membership' AND entity_id = {$memberId}")->fetchAll();
+    if (!empty($codes)) {
+      $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+      $chapter = $chapterCodes[$codes[0]['chapter_code']];
+      $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+      $fund = $fundCodes[$codes[0]['fund_code']];
+      $string = '&nbsp;&nbsp;&nbsp;&nbsp;';
+      $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Chapter</strong></span>:&nbsp;$chapter";
+      if ($fund) {
+        $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
+      }
+      CRM_Core_Resources::singleton()->addScript(
+       "CRM.$(function($) {
+           $.each($('.crm-membership-view-form-block table > tbody > tr:nth-child(2)'), function() {
+           if ($('td', this).length == 2) {
+             $('td:nth-child(2)', this).append('$string');
+           }
+         });
+       });"
+      );
+    }
+  }
+  if ($formName == 'CRM_Event_Form_ParticipantView') {
+    $participantId = $form->get('id');
+    $codes = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_table = 'civicrm_participant' AND entity_id = {$participantId}")->fetchAll();
+    if (!empty($codes)) {
+      $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+      $chapter = $chapterCodes[$codes[0]['chapter_code']];
+      $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+      $fund = $fundCodes[$codes[0]['fund_code']];
+      $string = '&nbsp;&nbsp;&nbsp;&nbsp;';
+      $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Chapter</strong></span>:&nbsp;$chapter";
+      if ($fund) {
+        $string .= "&nbsp;&nbsp;&nbsp;<span class=\"label\"><strong>Fund</strong></span>:&nbsp;$fund";
+      }
+      CRM_Core_Resources::singleton()->addScript(
+       "CRM.$(function($) {
+           $.each($('.crm-event-participant-view-form-block table > tbody > tr:nth-child(2)'), function() {
+           if ($('td', this).length == 2) {
+             $('td:nth-child(2)', this).append('$string');
+           }
+         });
+       });"
+      );
+    }
+  }
   if ($formName == "CRM_Event_Form_ManageEvent_Registration") {
     $cid = CRM_Core_Session::singleton()->get('userID');
     if ($cid) {
@@ -379,7 +427,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       break;
 
     case "CRM_Member_Form_Membership":
-      // Add chapter code for main contribution.
+      // Add chapter, fund code for main contribution.
       $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE membership_id = {$form->_id}");
       $isPriceSet = FALSE;
       if (CRM_Utils_Array::value('chapter_code_trxn', $form->_submitValues) || CRM_Utils_Array::value('fund_code_trxn', $form->_submitValues)) {
@@ -394,6 +442,20 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     default:
       break;
     }
+  }
+
+  if ($formName == "CRM_Member_Form_Membership" && ($form->_action & CRM_Core_Action::ADD)) {
+    // Add chapter, fund code for membership.
+    $memType = $form->getVar('_memType');
+    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$memType} AND entity_table = 'civicrm_membership_type'")->fetchAll()[0];
+    CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $form->_id, "civicrm_membership");
+  }
+
+  if ($formName == "CRM_Event_Form_Participant" && ($form->_action & CRM_Core_Action::ADD)) {
+    // Add chapter, fund code for participant.
+    $eventId = $form->getVar('_eventId');
+    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$eventId} AND entity_table = 'civicrm_event'")->fetchAll()[0];
+    CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $form->_id, "civicrm_participant");
   }
 
   // Handle updates to Contributions.

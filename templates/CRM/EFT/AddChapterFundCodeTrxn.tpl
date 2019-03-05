@@ -4,9 +4,21 @@
 <script type="text/javascript">
 CRM.$( function($) {
   $( document ).ajaxComplete(function( event, xhr, settings ) {
-    $('#chapter_code_trxn_section').insertAfter($('#payment_instrument_id'));
+    if ($('#payment_instrument_id').length) {
+      $('#chapter_code_trxn_section').show();
+      $('#chapter_code_trxn_section').insertAfter($('#payment_instrument_id'));
+    }
+    else {
+      $('#chapter_code_trxn_section').hide();
+    }
   });
-  $('#chapter_code_trxn_section').insertAfter($('#payment_instrument_id'));
+  if ($('#payment_instrument_id').length) {
+    $('#chapter_code_trxn_section').show();
+    $('#chapter_code_trxn_section').insertAfter($('#payment_instrument_id'));
+  }
+  else {
+    $('#chapter_code_trxn_section').hide();
+  }
 
 
   $('#chapter_code_trxn').on('change', function (e) {

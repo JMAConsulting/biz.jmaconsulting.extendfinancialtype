@@ -174,6 +174,8 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       "civicrm_price_set",
       "civicrm_event",
       "civicrm_membership_type",
+      "civicrm_membership",
+      "civicrm_participant",
       "civicrm_contribution_page",
       "civicrm_price_field_value",
     ])) {
