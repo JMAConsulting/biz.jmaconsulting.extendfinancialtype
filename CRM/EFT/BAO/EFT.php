@@ -136,6 +136,9 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         }
         elseif ($fund['isMembership']) {
           $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
+          if (empty($chapterFund)) {
+            $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+          }
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
         }
