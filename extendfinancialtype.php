@@ -512,12 +512,31 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
-    $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], NULL, $form->_contributionID, "civicrm_contribution_page_online");
-    $params = [
+    $memberItems = [
+      'isMembership' => $form->_values['isMembership'],
+      'memType' => $form->get('membershipTypeID'),
+    ];
+    $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
+    $ftParams = [
       'chapter_code_trxn' => CRM_Utils_Array::value(CHAPTER_CODE, $form->_submitValues),
       'fund_code_trxn' => CRM_Utils_Array::value(FUND_CODE, $form->_submitValues),
     ];
-    CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $params);
+    if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
+      CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
+    }
+  }
+  if ($formName == "CRM_Event_Form_Registration_Confirm") {
+    $participants = $form->getVar('_participantIDS');
+    foreach ($participants as $pid) {
+      $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_eventId, NULL, $pid, "civicrm_event_page_online");
+      $ftParams = [
+        'chapter_code_trxn' => CRM_Utils_Array::value(CHAPTER_CODE, $form->_submitValues),
+        'fund_code_trxn' => CRM_Utils_Array::value(FUND_CODE, $form->_submitValues),
+      ];
+      if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
+        CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
+      }
+    }
   }
 }
 

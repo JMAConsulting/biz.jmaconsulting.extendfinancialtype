@@ -119,7 +119,8 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           chapter_code, fund_code
           FROM civicrm_chapter_entity
           WHERE entity_table = 'civicrm_price_field_value'
-          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll()[0];
+          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll();
+        $lineItemChapterFund = CRM_Utils_Array::value(0, $lineItemChapterFund);
         $params = [
           'entity_id' => $lineItem['id'],
           'entity_table' => "civicrm_line_item",
@@ -128,8 +129,13 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $params['chapter'] = $lineItemChapterFund['chapter_code'];
           $params['fund'] = $lineItemChapterFund['fund_code'];
         }
-        else {
+        elseif (!$fund['isMembership']) {
           $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+          $params['chapter'] = $chapterFund['chapter_code'];
+          $params['fund'] = $chapterFund['fund_code'];
+        }
+        elseif ($fund['isMembership']) {
+          $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
         }
@@ -161,6 +167,80 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $params = [
         'entity_id' => $entityId,
         'entity_table' => "civicrm_contribution",
+        'chapter' => $chapterFund['chapter_code'],
+        'fund' => $chapterFund['fund_code'],
+      ];
+      self::saveChapterFund($params);
+
+      if ($fts) {
+        return $fts;
+      }
+    }
+    if ($entityTable == "civicrm_event_page_online") {
+      $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_participant_payment WHERE participant_id = {$entityId}");
+      if (!$contributionId) {
+        return;
+      }
+      $lineItems = civicrm_api3('LineItem', 'get', [
+        'contribution_id' => $contributionId,
+      ])['values'];
+      foreach ($lineItems as $lineItem) {
+        // Retrieve chapters and funds.
+        $lineItemChapterFund = CRM_Core_DAO::executeQuery("SELECT
+          chapter_code, fund_code
+          FROM civicrm_chapter_entity
+          WHERE entity_table = 'civicrm_price_field_value'
+          AND entity_id = {$lineItem['price_field_value_id']}")->fetchAll();
+        $lineItemChapterFund = CRM_Utils_Array::value(0, $lineItemChapterFund);
+        $params = [
+          'entity_id' => $lineItem['id'],
+          'entity_table' => "civicrm_line_item",
+        ];
+        if (!empty($lineItemChapterFund)) {
+          $params['chapter'] = $lineItemChapterFund['chapter_code'];
+          $params['fund'] = $lineItemChapterFund['fund_code'];
+        }
+        else {
+          $chapterFund = self::getChapterFund($chapter, "civicrm_event");
+          $params['chapter'] = $chapterFund['chapter_code'];
+          $params['fund'] = $chapterFund['fund_code'];
+        }
+        self::saveChapterFund($params);
+
+        // We also set the chapter and code for the corresponding financial item for this line item.
+        $financialItem = civicrm_api3('FinancialItem', 'getsingle', [
+          'return' => ["id"],
+          'entity_id' => $lineItem['id'],
+          'entity_table' => "civicrm_line_item",
+        ])['id'];
+        $itemParams = [
+          'entity_id' => $financialItem,
+          'entity_table' => "civicrm_financial_item",
+          'chapter' => $params['chapter'],
+          'fund' => $params['fund'],
+        ];
+        self::saveChapterFund($itemParams);
+        // And for the corresponding financial trxn for this contribution.
+        $financialTrxn = civicrm_api3('EntityFinancialTrxn', 'getvalue', [
+          'return' => "financial_trxn_id",
+          'entity_id' => $financialItem,
+          'entity_table' => "civicrm_financial_item",
+        ]);
+        $fts[] = $financialTrxn;
+      }
+      // Add chapter code for contribution as well.
+      $chapterFund = self::getChapterFund($chapter, "civicrm_event");
+      $params = [
+        'entity_id' => $contributionId,
+        'entity_table' => "civicrm_contribution",
+        'chapter' => $chapterFund['chapter_code'],
+        'fund' => $chapterFund['fund_code'],
+      ];
+      self::saveChapterFund($params);
+      // Add chapter code for participant too.
+      $params = [
+        'entity_id' => $entityId,
+        'entity_table' => "civicrm_participant",
         'chapter' => $chapterFund['chapter_code'],
         'fund' => $chapterFund['fund_code'],
       ];
@@ -275,7 +355,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $financialItem = civicrm_api3('FinancialItem', 'getsingle', [
             'return' => ["id"],
             'entity_id' => $lineItem['id'],
-            'entity_table' => $entityTable,
+            'entity_table' => 'civicrm_line_item',
           ])['id'];
           self::deleteEntity($financialItem, 'civicrm_financial_item');
           $financialTrxn = civicrm_api3('EntityFinancialTrxn', 'getvalue', [
