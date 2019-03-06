@@ -210,7 +210,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_chapter_code[' . $i . ']',
         ts('Chapter Code'),
-        [ts('- select -')] + $chapterCodes
+        $chapterCodes
       );
     }
 
@@ -219,7 +219,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_fund_code[' . $i . ']',
         ts('Fund Code'),
-        [ts('- select -')] + $fundCodes
+        $fundCodes
       );
     }
     
@@ -233,13 +233,13 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code',
       ts('Chapter Code'),
-      [ts('- select -')] + $chapterCodes
+      $chapterCodes
     );
     // Add fund codes.
     $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code',
       ts('Fund Code'),
-      [ts('- select -')] + $fundCodes
+      $fundCodes
     );
     if ($formName == "CRM_Contribute_Form_AdditionalPayment") {
       $form->assign('isPayment', TRUE);
@@ -252,23 +252,23 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
   if (array_key_exists('payment_instrument_id', $form->_elementIndex) || (in_array($formName, ["CRM_Contribute_Form_Contribution", "CRM_Event_Form_Participant"]) && ($form->_action & CRM_Core_Action::ADD))
     && (in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE]))) {
     
-    if (in_array($formName, ["CRM_Financial_Form_FinancialBatch", "CRM_Financial_Form_Search"])) {
+    if (in_array($formName, ["CRM_Financial_Form_FinancialBatch", "CRM_Financial_Form_Search", "CRM_Admin_Form_PaymentProcessor"])) {
       return;
     }
-    if ($formName == "CRM_Contribute_Form_Contribution" && $form->_context == 'contribution') {
+    if ($formName == "CRM_Contribute_Form_Contribution" && !empty($form->_mode)) {
       $form->assign('isPayment', TRUE);
     }
     // Add chapter codes.
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code_trxn',
       ts('Chapter Code'),
-      [ts('- select -')] + $chapterCodes
+      $chapterCodes
     );
     // Add fund codes.
     $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code_trxn',
       ts('Fund Code'),
-      [ts('- select -')] + $fundCodes
+      $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/EFT/AddChapterFundCodeTrxn.tpl',
@@ -333,7 +333,8 @@ function extendfinancialtype_civicrm_postSave_civicrm_contribution_soft($dao) {
       if ($ft == "General Donation") {
         // We change the financial account in this case to Memorial Donation.
         $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE accounting_code = 4012");
-        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($dao->contribution_id)[0][1];
+        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($dao->contribution_id)[0];
+        $fi = reset($fi);
         if ($fi) {
           civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]);
         }
@@ -447,30 +448,26 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     case "CRM_Contribute_Form_AdditionalPayment":
       // Get last inserted financial trxn if updated.
-      $ft = CRM_Core_DAO::executeQuery("SELECT ft.id
-        FROM civicrm_contribution c
-        INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
-        INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
-        LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
-        WHERE c.id = {$form->_id} AND ce.entity_id IS NULL")->fetchAll()[0];
+      $ft = CRM_EFT_BAO_EFT::getLastTrxnId($form->_id);
       if (!empty($ft)) {
         $params = [
-          "entity_id" => $ft['id'],
+          "entity_id" => $ft,
           "entity_table" => "civicrm_financial_trxn",
-          "chapter" => $form->_submitValues['chapter_code'],
-          "fund" => $form->_submitValues['fund_code'],
+          "chapter" => $form->_submitValues['chapter_code_trxn'],
+          "fund" => $form->_submitValues['fund_code_trxn'],
         ];
         CRM_EFT_BAO_EFT::saveChapterFund($params);
       }
-      $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0][1];
-      if ($fi) {
+      $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0];
+      $fi = reset($fi);
+      if (!empty($fi)) {
         $entry = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_chapter_entity WHERE entity_id = {$fi} AND entity_table = 'civicrm_financial_item'");
         if (!$entry) {
           $params = [
-            "entity_id" => $fi,
+            "entity_id" => $fi[0],
             "entity_table" => "civicrm_financial_item",
-            "chapter" => $form->_submitValues['chapter_code'],
-            "fund" => $form->_submitValues['fund_code'],
+            "chapter" => $form->_submitValues['chapter_code_trxn'],
+            "fund" => $form->_submitValues['fund_code_trxn'],
           ];
           CRM_EFT_BAO_EFT::saveChapterFund($params);
         }
@@ -485,15 +482,19 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
   if ($formName == "CRM_Member_Form_Membership" && ($form->_action & CRM_Core_Action::ADD)) {
     // Add chapter, fund code for membership.
     $memType = $form->getVar('_memType');
-    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$memType} AND entity_table = 'civicrm_membership_type'")->fetchAll()[0];
-    CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $form->_id, "civicrm_membership");
+    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$memType} AND entity_table = 'civicrm_membership_type'")->fetchAll();
+    if (!empty($chapterFund)) {
+      CRM_EFT_BAO_EFT::addChapterFund($chapterFund[0]['chapter_code'], $chapterFund[0]['fund_code'], $form->_id, "civicrm_membership");
+    }
   }
 
   if ($formName == "CRM_Event_Form_Participant" && ($form->_action & CRM_Core_Action::ADD)) {
     // Add chapter, fund code for participant.
     $eventId = $form->getVar('_eventId');
-    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$eventId} AND entity_table = 'civicrm_event'")->fetchAll()[0];
-    CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $form->_id, "civicrm_participant");
+    $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$eventId} AND entity_table = 'civicrm_event'")->fetchAll();
+    if (!empty($chapterFund)) {
+      CRM_EFT_BAO_EFT::addChapterFund($chapterFund[0]['chapter_code'], $chapterFund[0]['fund_code'], $form->_id, "civicrm_participant");
+    }
   }
 
   // Handle updates to Contributions.
@@ -501,12 +502,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     switch ($formName) {
     case "CRM_Contribute_Form_Contribution":
       // Get last inserted financial trxn if updated.
-      $ft = CRM_Core_DAO::executeQuery("SELECT ft.id
-        FROM civicrm_contribution c
-        INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
-        INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
-        LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
-        WHERE c.id = {$form->_id} AND ce.entity_id IS NULL")->fetchAll()[0];
+      $ft = CRM_EFT_BAO_EFT::getLastTrxnId($form->_id);
       if (!empty($ft)) {
         $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code 
           FROM civicrm_contribution c
@@ -516,7 +512,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           WHERE c.id = {$form->_id} ORDER BY ft.id DESC LIMIT 1")->fetchAll()[0];
         if (!empty($lastFt)) {
           $params = [
-            "entity_id" => $ft['id'],
+            "entity_id" => $ft,
             "entity_table" => "civicrm_financial_trxn",
             "chapter" => $lastFt['chapter_code'],
             "fund" => $lastFt['fund_code'],
@@ -524,7 +520,8 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           CRM_EFT_BAO_EFT::saveChapterFund($params);
         }
       }
-      $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0][1];
+      $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0];
+      $fi = reset($fi);
       if ($fi) {
         $entry = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_chapter_entity WHERE entity_id = {$fi} AND entity_table = 'civicrm_financial_item'");
         if (!$entry) {
