@@ -17,6 +17,12 @@ CRM.$( function($) {
     $('#chapter_code_section').hide();
   }
 
+  {/literal}{if $isPayment}{literal}
+  if ($('#payment_processor_id').length) {
+    $('#chapter_code_section').show();
+    $('#chapter_code_section').insertAfter($('#payment_processor_id'));
+  }
+  {/literal}{/if}{literal}
 
   $('#chapter_code').on('change', function (e) {
     var chapter = e.target.value;
