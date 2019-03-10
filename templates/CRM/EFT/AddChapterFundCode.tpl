@@ -24,6 +24,13 @@ CRM.$( function($) {
   }
   {/literal}{/if}{literal}
 
+  {/literal}{if $isPaymentProcessor}{literal}
+  if ($('#financial_account_id').length) {
+    $('#chapter_code_section').show();
+    $('#chapter_code_section').insertAfter($('#financial_account_id'));
+  }
+  {/literal}{/if}{literal}
+
   $('#chapter_code').on('change', function (e) {
     var chapter = e.target.value;
     if ($("#fund_code option[value='" + chapter + "']").length > 0) {

@@ -271,6 +271,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       "civicrm_participant",
       "civicrm_contribution_page",
       "civicrm_price_field_value",
+      "civicrm_payment_processor",
     ])) {
       $params = [
         'entity_id' => $entityId,
@@ -352,8 +353,12 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
   }
 
   public static function getChapterFund($entityId, $entityTable) {
-    $chapterFundCode = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'")->fetchAll()[0];
-    return ['chapter_code' => $chapterFundCode['chapter_code'], 'fund_code' => $chapterFundCode['fund_code']];
+    $chapterFundCode = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$entityId} AND entity_table = '{$entityTable}'")->fetchAll();
+    if (!empty($chapterFundCode)) {
+      $chapterFundCode = $chapterFundCode[0];
+      return ['chapter_code' => $chapterFundCode['chapter_code'], 'fund_code' => $chapterFundCode['fund_code']];
+    }
+    return NULL;
   }
 
   public static function saveChapterFund($params) {

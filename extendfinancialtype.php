@@ -249,6 +249,25 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     ));
   }
 
+  if ($formName == "CRM_Admin_Form_PaymentProcessor" && in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE])) {
+    // Add chapter codes.
+    $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+    $form->add('select', 'chapter_code',
+      ts('Chapter Code'),
+      $chapterCodes
+    );
+    // Add fund codes.
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    $form->add('select', 'fund_code',
+      ts('Fund Code'),
+      $fundCodes
+    );
+    $form->assign('isPaymentProcessor', TRUE);
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/EFT/AddChapterFundCode.tpl',
+    ));
+  }
+
   if (array_key_exists('payment_instrument_id', $form->_elementIndex) || (in_array($formName, ["CRM_Contribute_Form_Contribution", "CRM_Event_Form_Participant"]) && ($form->_action & CRM_Core_Action::ADD))
     && (in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE]))) {
     
@@ -367,6 +386,21 @@ function extendfinancialtype_civicrm_postSave_civicrm_membership_type($dao) {
   }
 }
 
+function extendfinancialtype_civicrm_postSave_civicrm_payment_processor($dao) {
+  if ($dao->id) {
+    $pid = CRM_Core_Smarty::singleton()->get_template_vars('eft_payment_processor');
+    if ($pid) {
+      $pids = [$pid, $dao->id];
+    }
+    else {
+      CRM_Core_Smarty::singleton()->assign('eft_payment_processor', $dao->id);
+    }
+    if (!empty($pids)) {
+      CRM_Core_Smarty::singleton()->assign('eft_payment_processors', $pids);
+    }
+  }
+}
+
 /**
  * Implementation of hook_civicrm_postProcess
  *
@@ -443,6 +477,13 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       if ($contributionId) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $contributionId, "civicrm_line_item", $isPriceSet);
         CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $form->_submitValues);
+      }
+      break;
+
+    case "CRM_Admin_Form_PaymentProcessor":
+      $pids = CRM_Core_Smarty::singleton()->get_template_vars('eft_payment_processors');
+      foreach ($pids as $pid) {
+        CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $pid, "civicrm_payment_processor");
       }
       break;
 
@@ -552,9 +593,15 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       'memType' => $form->get('membershipTypeID'),
     ];
     $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
+
+    // Get chapter and fund for payment processor id.
+    $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
+    if ($paymentProcessorId) {
+      $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+    }
     $ftParams = [
-      'chapter_code_trxn' => CRM_Utils_Array::value(CHAPTER_CODE, $form->_submitValues),
-      'fund_code_trxn' => CRM_Utils_Array::value(FUND_CODE, $form->_submitValues),
+      'chapter_code_trxn' => CRM_Utils_Array::value('chapter_code', $chapterFund),
+      'fund_code_trxn' => CRM_Utils_Array::value('fund_code', $chapterFund),
     ];
     if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
       CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
@@ -562,12 +609,17 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
   }
   if ($formName == "CRM_Event_Form_Registration_Confirm") {
     $participants = $form->getVar('_participantIDS');
+    // Get chapter and fund for payment processor id.
+    $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->getVar('_params'));
+    if ($paymentProcessorId) {
+      $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+    }
+    $ftParams = [
+      'chapter_code_trxn' => CRM_Utils_Array::value('chapter_code', $chapterFund),
+      'fund_code_trxn' => CRM_Utils_Array::value('fund_code', $chapterFund),
+    ];
     foreach ($participants as $pid) {
       $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_eventId, NULL, $pid, "civicrm_event_page_online");
-      $ftParams = [
-        'chapter_code_trxn' => CRM_Utils_Array::value(CHAPTER_CODE, $form->_submitValues),
-        'fund_code_trxn' => CRM_Utils_Array::value(FUND_CODE, $form->_submitValues),
-      ];
       if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
         CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
       }
