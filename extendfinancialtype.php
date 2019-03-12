@@ -1,6 +1,6 @@
 <?php
-define('CHAPTER_CODE', 'custom_758');
-define('FUND_CODE', 'custom_759');
+define('CHAPTERFUND', 'Chapter_Funds__39');
+define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -134,6 +134,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
+           $('td#". CHAPTERFUND ."').hide();
            $.each($('.crm-contribution-view-form-block table > tbody > tr:nth-child(2)'), function() {
            if ($('td', this).length == 2) {
              $('td:nth-child(2)', this).append('$string');
@@ -142,6 +143,26 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
        });"
       );
     }
+  }
+  if ($formName == 'CRM_Contribute_Form_Contribution') {
+    CRM_Core_Resources::singleton()->addScript(
+      "CRM.$(function($) {
+        $('div.custom-group-Chapter_Funds').hide();
+        $( document ).ajaxComplete(function( event, xhr, settings ) {
+          $('div.custom-group-Chapter_Funds').hide();
+        });
+      });"
+    );
+  }
+  if ($formName == 'CRM_Member_Form_Membership') {
+    CRM_Core_Resources::singleton()->addScript(
+      "CRM.$(function($) {
+        $('div.custom-group-Chapter_Funds_Memberships').hide();
+        $( document ).ajaxComplete(function( event, xhr, settings ) {
+          $('div.custom-group-Chapter_Funds_Memberships').hide();
+        });
+      });"
+    );
   }
   if ($formName == 'CRM_Member_Form_MembershipView') {
     $memberId = $form->get('id');
@@ -158,6 +179,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
+           $('td#". MEMCHAPTERFUND ."').hide();
            $.each($('.crm-membership-view-form-block table > tbody > tr:nth-child(2)'), function() {
            if ($('td', this).length == 2) {
              $('td:nth-child(2)', this).append('$string');
@@ -527,6 +549,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     if (!empty($chapterFund)) {
       CRM_EFT_BAO_EFT::addChapterFund($chapterFund[0]['chapter_code'], $chapterFund[0]['fund_code'], $form->_id, "civicrm_membership");
     }
+    else {
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_membership");
+    }
   }
 
   if ($formName == "CRM_Event_Form_Participant" && ($form->_action & CRM_Core_Action::ADD)) {
@@ -535,6 +560,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$eventId} AND entity_table = 'civicrm_event'")->fetchAll();
     if (!empty($chapterFund)) {
       CRM_EFT_BAO_EFT::addChapterFund($chapterFund[0]['chapter_code'], $chapterFund[0]['fund_code'], $form->_id, "civicrm_participant");
+    }
+    else {
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $form->_id, "civicrm_participant");
     }
   }
 
