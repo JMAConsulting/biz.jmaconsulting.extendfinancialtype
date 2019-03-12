@@ -1,13 +1,13 @@
 <?php
-define('CHAPTER_CREDIT', 'custom_1');
-define('CHAPTER_DEBIT', 'custom_5');
-define('FUND_CREDIT', 'custom_2');
-define('FUND_DEBIT', 'custom_6');
+define('CHAPTER_CREDIT', 'custom_765');
+define('CHAPTER_DEBIT', 'custom_767');
+define('FUND_CREDIT', 'custom_766');
+define('FUND_DEBIT', 'custom_768');
 
-define('MEM_CHAPTER_CREDIT', 'custom_7');
-define('MEM_CHAPTER_DEBIT', 'custom_9');
-define('MEM_FUND_CREDIT', 'custom_8');
-define('MEM_FUND_DEBIT', 'custom_10');
+define('MEM_CHAPTER_CREDIT', 'custom_769');
+define('MEM_CHAPTER_DEBIT', 'custom_771');
+define('MEM_FUND_CREDIT', 'custom_770');
+define('MEM_FUND_DEBIT', 'custom_772');
 /*
  +--------------------------------------------------------------------+
  | CiviCRM version 5                                                  |
