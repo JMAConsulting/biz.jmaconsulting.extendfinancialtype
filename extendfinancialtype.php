@@ -645,7 +645,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     ];
 
     if ($form->_id == DONATION_PAGE) {
-      if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL) && $submitChapter != 1000) {
+      if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL) && !empty($submitChapter)) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item");
         $chapterFund = [
           'chapter_code' => $submitChapter,
