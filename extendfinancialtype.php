@@ -1,6 +1,7 @@
 <?php
 define('CHAPTERFUND', 'Chapter_Funds__39');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
+define('DONATION_PAGE', 6);
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -617,19 +618,30 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
     $memberItems = [
-      'isMembership' => $form->_values['isMembership'],
+      'isMembership' => CRM_Utils_Array::value('isMembership', $form->_values, NULL),
       'memType' => $form->get('membershipTypeID'),
     ];
-    $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
 
-    // Get chapter and fund for payment processor id.
-    $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
-    if ($paymentProcessorId) {
-      $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+    if ($form->_id == DONATION_PAGE) {
+      if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL) && $submitChapter != 1000) {
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item");
+        $chapterFund = [
+          'chapter_code' => $submitChapter,
+          'fund_code' => $submitChapter,
+        ];
+      }
+    }
+    else {
+      $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
+      // Get chapter and fund for payment processor id.
+      $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
+      if ($paymentProcessorId) {
+        $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+      }
     }
     $ftParams = [
-      'chapter_code_trxn' => CRM_Utils_Array::value('chapter_code', $chapterFund),
-      'fund_code_trxn' => CRM_Utils_Array::value('fund_code', $chapterFund),
+      'chapter_code_trxn' => CRM_Utils_Array::value('chapter_code', $chapterFund, NULL),
+      'fund_code_trxn' => CRM_Utils_Array::value('fund_code', $chapterFund, NULL),
     ];
     if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
       CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
