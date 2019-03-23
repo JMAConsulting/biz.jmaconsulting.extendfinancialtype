@@ -1,7 +1,7 @@
 <?php
 define('CHAPTERFUND', 'Chapter_Funds__39');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
-define('DONATION_PAGE', 6);
+define('DONATION_PAGE', 1);
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -254,12 +254,19 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     }
     // Add chapter codes.
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+    // Add fund codes.
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    if ($formName == "CRM_Member_Form_Membership") {
+      $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+      asort($chapterCodes);
+      asort($fundCodes);
+      $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
+      $form->setDefaults(['chapter_code' => 1000, 'fund_code' => 1000]);
+    }
     $form->add('select', 'chapter_code',
       ts('Chapter Code'),
       $chapterCodes
     );
-    // Add fund codes.
-    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code',
       ts('Fund Code'),
       $fundCodes
@@ -302,12 +309,19 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     }
     // Add chapter codes.
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+    // Add fund codes.
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    if ($formName == "CRM_Member_Form_Membership") {
+      $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+      asort($chapterCodes);
+      asort($fundCodes);
+      $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
+      $form->setDefaults(['chapter_code_trxn' => 1000, 'fund_code_trxn' => 1000]);
+    }
     $form->add('select', 'chapter_code_trxn',
       ts('Chapter Code'),
       $chapterCodes
     );
-    // Add fund codes.
-    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code_trxn',
       ts('Fund Code'),
       $fundCodes
@@ -435,23 +449,31 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     switch ($formName) {
     case "CRM_Price_Form_Set":
       $sid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_set_id');
+      if (!$sid) {
+        return;
+      }
       CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $sid, "civicrm_price_set");
       break;
 
     case "CRM_Price_Form_Field":
+      $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
+      if (!$fid) {
+        return;
+      }
       if ($form->_submitValues['html_type'] == "Text") {
-        $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
         CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $fid, "civicrm_price_field");
       }
       else {
         // We need to save the chapter and fund for each price field value rather than price field.
-        $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
         CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues, NULL, $fid, "civicrm_price_field_value" , TRUE);
       }
       break;
 
     case "CRM_Price_Form_Option":
       $oid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_value_id');
+      if (!$oid) {
+        return;
+      }
       CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $oid, "civicrm_price_field_value", FALSE);
       break;
 
