@@ -2,6 +2,7 @@
 define('CHAPTERFUND', 'Chapter_Funds__39');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
 define('DONATION_PAGE', 1);
+define('RAISE_THE_FLAG', 7);
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -116,6 +117,19 @@ function extendfinancialtype_civicrm_alterSettingsFolders(&$metaDataFolders = NU
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
  */
 function extendfinancialtype_civicrm_buildForm($formName, &$form) {
+  // Raise the flag events.
+  if ($formName == "CRM_Event_Form_Registration_Register" && $form->_values['event']['event_type_id'] == RAISE_THE_FLAG) {
+    $chapters = CRM_Core_OptionGroup::values('chapter_codes');
+    asort($chapters);
+
+    $form->add('select', 'chapter_code',
+      ts('Chapter/Fund'), $chapters, TRUE, array('class' => 'crm-select2 ')
+    );
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/RaiseTheFlag.tpl',
+    ));
+    $form->setDefaults(['chapter_code' => 1000]);
+  }
   if ($formName == 'CRM_Contribute_Form_ContributionView') {
     $contributionId = $form->get('id');
     // SELECT chapter code and FA code as fund ID.
@@ -646,7 +660,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     if ($form->_id == DONATION_PAGE) {
       if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL) && !empty($submitChapter)) {
-        $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item");
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item", TRUE);
         $chapterFund = [
           'chapter_code' => $submitChapter,
           'fund_code' => $submitChapter,
@@ -681,7 +695,14 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       'fund_code_trxn' => CRM_Utils_Array::value('fund_code', $chapterFund),
     ];
     foreach ($participants as $pid) {
-      $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_eventId, NULL, $pid, "civicrm_event_page_online");
+      if ($form->_values['event']['event_type_id'] == RAISE_THE_FLAG) {
+        $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_participant_payment WHERE participant_id = {$pid}");
+        $chapter = CRM_Utils_Array::value('chapter_code', $form->_params['params'][$pid]);
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($chapter, $chapter, $contributionId, "civicrm_line_item", TRUE);
+      }
+      else {
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_eventId, NULL, $pid, "civicrm_event_page_online");
+      }
       if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
         CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
       }
