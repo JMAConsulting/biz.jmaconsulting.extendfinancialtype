@@ -2,7 +2,7 @@
 define('CHAPTERFUND', 'Chapter_Funds__39');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
 define('DONATION_PAGE', 1);
-define('RAISE_THE_FLAG', 7);
+define('RAISE_THE_FLAG', 23);
 
 require_once 'extendfinancialtype.civix.php';
 
