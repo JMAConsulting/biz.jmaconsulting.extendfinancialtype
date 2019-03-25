@@ -469,6 +469,76 @@ function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRe
   if ($op == "delete") {
     CRM_EFT_BAO_EFT::deleteChapterFundEntity($objectId, $objectName);
   }
+  if ($objectName == "Profile") {
+    $giftType = CRM_Utils_Array::value('custom_13', $objectRef, NULL);
+    if (!empty($giftType)) {
+      CRM_Core_Session::singleton()->set('giftType', $giftType);
+    }
+  }
+  if ($objectName == "Contribution" && $op == 'create' && CRM_Utils_Array::value('contribution_page_id', $objectRef)) {
+    $giftType = CRM_Core_Session::singleton()->get('giftType');
+    list($code, $ft) = addGiftFT($giftType);
+    if (!empty($ft)) {
+      $objectRef['financial_type_id'] = $ft;
+    }
+  }
+  if ($objectName == "FinancialItem" && $op == 'create') {
+    $giftType = CRM_Core_Session::singleton()->get('giftType');
+    list($code, $ft) = addGiftFT($giftType);
+    if (!empty($code)) {
+      $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE accounting_code = {$code}");
+      if (!empty($fa)) {
+        $objectRef['financial_account_id'] = $fa;
+      }
+    }
+  }
+  if ($objectName == "LineItem" && $op == 'create') {
+    $giftType = CRM_Core_Session::singleton()->get('giftType');
+    list($code, $ft) = addGiftFT($giftType);
+    if (!empty($ft)) {
+      $objectRef['financial_type_id'] = $ft;
+    }
+  }
+}
+
+function addGiftFT($giftType) {
+  if (!empty($giftType)) {
+    switch ($giftType) {
+      case "General Donation":
+        $ft = 4010;
+      break;
+      case "Adult Support Program":
+        $ft = 4016;
+      break;
+      case "Autism Awareness Day":
+        $ft = 4314;
+      break;
+      case "Building Brighter Futures Fund":
+        $ft = 4036;
+      break;
+      case "Eleanor Ritchie Scholarship":
+        $ft = 4420;
+      break;
+      case "Jeanette Holden Scholarship":
+        $ft = 4425;
+      break;
+      case "Hollyllyn Towie Scholarship":
+        $ft = 4428;
+      break;
+      case "Research":
+        $ft = 4015;
+      break;
+      default:
+        break;
+    }
+    if (!empty($ft)) {
+      $financialType = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_type WHERE name LIKE '{$ft}%'");
+      if (!empty($financialType)) {
+        return [$ft, $financialType];
+      }
+    }
+  }
+  return FALSE;
 }
 
 function extendfinancialtype_civicrm_postSave_civicrm_contribution_soft($dao) {
@@ -751,6 +821,23 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           'fund_code' => $submitChapter,
         ];
       }
+/*
+      // Change FT, FA based on gift type.
+      $giftType = civicrm_api3('CustomValue', 'get', [
+        'sequential' => 1,
+        'return' => ["custom_13"],
+        'entity_id' => $form->_contributionID,
+      ])['values'][0]['latest'];
+      if (!empty($giftType)) {
+        $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE name = '{$giftType}'");
+        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_contributionID)[0];
+        $fi = reset($fi);
+        if ($fi) {
+          civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]);
+        }
+        $ftsi
+      }
+*/
     }
     else {
       $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
