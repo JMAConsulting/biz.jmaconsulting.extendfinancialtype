@@ -1,6 +1,6 @@
 <?php
 define('CHAPTERFUND', 'Chapter_Funds__');
-define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
+define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__');
 define('DONATION_PAGE', 1);
 define('RAISE_THE_FLAG', 23);
 
@@ -190,6 +190,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
   }
   if ($formName == 'CRM_Member_Form_MembershipView') {
     $memberId = $form->get('id');
+    CRM_Core_Resources::singleton()->addScript(
+      "CRM.$(function($) {
+        $('td#". MEMCHAPTERFUND ."').hide();
+      });"
+    );
     $codes = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_table = 'civicrm_membership' AND entity_id = {$memberId}")->fetchAll();
     if (!empty($codes)) {
       $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
@@ -203,7 +208,6 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
-           $('td#". MEMCHAPTERFUND ."').hide();
            $.each($('.crm-membership-view-form-block table > tbody > tr:nth-child(2)'), function() {
            if ($('td', this).length == 2) {
              $('td:nth-child(2)', this).append('$string');
