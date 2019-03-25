@@ -1,5 +1,6 @@
 <div id="paymentsTab" style="display:none">
 <table class="selector row-highlight" id="newPaymentTable">
+  <tbody>
     <tr>
       <th>{ts}Amount{/ts}</th>
       <th>{ts}Type{/ts}</th>
@@ -24,13 +25,14 @@
         <td>{$payment.action}</td>
       </tr>
     {/foreach}
+  </tbody>
 </table>
 </div>
 {literal}
 <script type="text/javascript">
   CRM.$(function ($) {
     var paymentsTable = $('table.selector');
-    $(paymentsTable).replaceWith($('#newPaymentTable').html());
+    $(paymentsTable).replaceWith('<table class="selector row-highlight">' + $('#newPaymentTable').html() + '</table>');
   });
 </script>
 {/literal}

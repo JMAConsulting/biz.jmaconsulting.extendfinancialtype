@@ -272,7 +272,21 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
         $fundCodes
       );
     }
-    
+  }
+  if ($formName == "CRM_Contribute_Form_Contribution" && ($form->_action & CRM_Core_Action::UPDATE)) {
+    $payments = $form->get_template_vars('payments');
+    if (!empty($payments)) {
+      _extendfinancialtype_alterpayments($payments);
+      $form->assign('payments', $payments);
+    }
+    $lineitem = $form->get_template_vars('lineItem');
+    if (!empty($lineitem)) {
+      _extendfinancialtype_alterlineitems($lineitem);
+      $form->assign('lineItem', $lineitem);
+      if (!empty($lineitem)) {
+        $form->assign('isChapterFund', TRUE);
+      }
+    }
   }
   if (array_key_exists('financial_type_id', $form->_elementIndex)
       || (in_array($formName, ["CRM_Event_Form_Participant", "CRM_Contribute_Form_AdditionalPayment"]) && ($form->_action & CRM_Core_Action::ADD))) {
@@ -425,6 +439,20 @@ function _extendfinancialtype_alterpayments(&$payments) {
   CRM_Core_Region::instance('page-body')->add(array(
     'template' => 'CRM/PaymentInfo.tpl',
   ));
+}
+
+function _extendfinancialtype_alterlineitems(&$lineitems) {
+  $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+  $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+  foreach ($lineitems as &$lineitem) {
+    foreach ($lineitem as $id => &$item) {
+      $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($id, "civicrm_line_item");
+      if (!empty($chapterFund)) {
+        $item['chapter_code'] = $chapterCodes[$chapterFund['chapter_code']];
+        $item['fund_code'] = $fundCodes[$chapterFund['fund_code']];
+      }
+    }
+  }
 }
 
 function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRef) {
@@ -706,7 +734,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     ];
 
     if ($form->_id == DONATION_PAGE) {
-      if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL) && !empty($submitChapter)) {
+      if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL)) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item", TRUE);
         $chapterFund = [
           'chapter_code' => $submitChapter,
