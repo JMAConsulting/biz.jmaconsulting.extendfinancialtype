@@ -1,5 +1,5 @@
 <?php
-define('CHAPTERFUND', 'Chapter_Funds__39');
+define('CHAPTERFUND', 'Chapter_Funds__');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__5');
 define('DONATION_PAGE', 1);
 define('RAISE_THE_FLAG', 23);
@@ -131,6 +131,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $form->setDefaults(['chapter_code' => 1000]);
   }
   if ($formName == 'CRM_Contribute_Form_ContributionView') {
+    CRM_Core_Resources::singleton()->addScript(
+       "CRM.$(function($) {
+           $('td#". CHAPTERFUND ."').hide();
+       });"
+    );
     // Assign chapter and fund.
     $payments = $form->get_template_vars('payments');
     _extendfinancialtype_alterpayments($payments);
@@ -154,7 +159,6 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
       CRM_Core_Resources::singleton()->addScript(
        "CRM.$(function($) {
-           $('td#". CHAPTERFUND ."').hide();
            $.each($('.crm-contribution-view-form-block table > tbody > tr:nth-child(2)'), function() {
            if ($('td', this).length == 2) {
              $('td:nth-child(2)', this).append('$string');
