@@ -131,6 +131,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $form->setDefaults(['chapter_code' => 1000]);
   }
   if ($formName == 'CRM_Contribute_Form_ContributionView') {
+    // Assign chapter and fund.
+    $payments = $form->get_template_vars('payments');
+    _extendfinancialtype_alterpayments($payments);
+    $form->assign('payments', $payments);
+
     $contributionId = $form->get('id');
     // SELECT chapter code and FA code as fund ID.
     $fa = CRM_Contribute_PseudoConstant::getRelationalFinancialAccount(CRM_Core_Smarty::singleton()->get_template_vars('financial_type_id'), 'Income Account is');
@@ -321,6 +326,10 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       break;
 
     case "CRM_Contribute_Form_Contribution":
+      // Assign chapter and fund.
+      $payments = $form->get_template_vars('payments');
+      _extendfinancialtype_alterpayments($payments);
+      $form->assign('payments', $payments);
       $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->_id, "civicrm_contribution");
       break;
 
@@ -393,6 +402,21 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       'template' => 'CRM/EFT/AddChapterFundCodeTrxn.tpl',
     ));
   }
+}
+
+function _extendfinancialtype_alterpayments(&$payments) {
+  $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+  $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+  foreach ($payments as &$payment) {
+    $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($payment['id'], "civicrm_financial_trxn");
+    if (!empty($chapterFund)) {
+      $payment['chapter_code'] = $chapterCodes[$chapterFund['chapter_code']];
+      $payment['fund_code'] = $fundCodes[$chapterFund['fund_code']];
+    }
+  }
+  CRM_Core_Region::instance('page-body')->add(array(
+    'template' => 'CRM/PaymentInfo.tpl',
+  ));
 }
 
 function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRef) {
