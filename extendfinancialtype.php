@@ -138,8 +138,18 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     );
     // Assign chapter and fund.
     $payments = $form->get_template_vars('payments');
-    _extendfinancialtype_alterpayments($payments);
-    $form->assign('payments', $payments);
+    if (!empty($payments)) {
+      _extendfinancialtype_alterpayments($payments);
+      $form->assign('payments', $payments);
+    }
+    $lineitem = $form->get_template_vars('lineItem');
+    if (!empty($lineitem)) {
+      _extendfinancialtype_alterlineitems($lineitem);
+      $form->assign('lineItem', $lineitem);
+      if (!empty($lineitem)) {
+        $form->assign('isChapterFund', TRUE);
+      }
+    }
 
     $contributionId = $form->get('id');
     // SELECT chapter code and FA code as fund ID.
