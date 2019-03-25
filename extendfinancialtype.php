@@ -312,39 +312,6 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     ));
   }
 
-  if (array_key_exists('payment_instrument_id', $form->_elementIndex) || (in_array($formName, ["CRM_Contribute_Form_Contribution", "CRM_Event_Form_Participant"]) && ($form->_action & CRM_Core_Action::ADD))
-    && (in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE]))) {
-    
-    if (in_array($formName, ["CRM_Financial_Form_FinancialBatch", "CRM_Financial_Form_Search", "CRM_Admin_Form_PaymentProcessor"])) {
-      return;
-    }
-    if ($formName == "CRM_Contribute_Form_Contribution" && !empty($form->_mode)) {
-      $form->assign('isPayment', TRUE);
-    }
-    // Add chapter codes.
-    $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
-    // Add fund codes.
-    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
-    if ($formName == "CRM_Member_Form_Membership") {
-      $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
-      asort($chapterCodes);
-      asort($fundCodes);
-      $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
-      $form->setDefaults(['chapter_code_trxn' => 1000, 'fund_code_trxn' => 1000]);
-    }
-    $form->add('select', 'chapter_code_trxn',
-      ts('Chapter Code'),
-      $chapterCodes
-    );
-    $form->add('select', 'fund_code_trxn',
-      ts('Fund Code'),
-      $fundCodes
-    );
-    CRM_Core_Region::instance('page-body')->add(array(
-      'template' => 'CRM/EFT/AddChapterFundCodeTrxn.tpl',
-    ));
-  }
-
   if ($form->_action & CRM_Core_Action::UPDATE) {
     // Setting defaults.
     $defaults = [];
@@ -377,10 +344,54 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->_id, "civicrm_membership_type");
       break;
 
+    case "CRM_Admin_Form_PaymentProcessor":
+      $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->getVar('_id'), "civicrm_payment_processor");
+      break;
+
+    case "CRM_Financial_Form_PaymentEdit":
+      $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->getVar('_id'), "civicrm_financial_trxn");
+      if (!empty($defaults)) {
+        $defaults = ['chapter_code_trxn' => $defaults['chapter_code'], 'fund_code_trxn' => $defaults['fund_code']];
+      }
+      break;
+
     default:
       break;
     }
     $form->setDefaults($defaults);
+  }
+
+  if (array_key_exists('payment_instrument_id', $form->_elementIndex) || (in_array($formName, ["CRM_Contribute_Form_Contribution", "CRM_Event_Form_Participant"]) && ($form->_action & CRM_Core_Action::ADD))
+    && (in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE]))) {
+    
+    if (in_array($formName, ["CRM_Financial_Form_FinancialBatch", "CRM_Financial_Form_Search", "CRM_Admin_Form_PaymentProcessor"])) {
+      return;
+    }
+    if ($formName == "CRM_Contribute_Form_Contribution" && !empty($form->_mode)) {
+      $form->assign('isPayment', TRUE);
+    }
+    // Add chapter codes.
+    $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
+    // Add fund codes.
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    if ($formName == "CRM_Member_Form_Membership") {
+      $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+      asort($chapterCodes);
+      asort($fundCodes);
+      $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
+      $form->setDefaults(['chapter_code_trxn' => 1000, 'fund_code_trxn' => 1000]);
+    }
+    $form->add('select', 'chapter_code_trxn',
+      ts('Chapter Code'),
+      $chapterCodes
+    );
+    $form->add('select', 'fund_code_trxn',
+      ts('Fund Code'),
+      $fundCodes
+    );
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/EFT/AddChapterFundCodeTrxn.tpl',
+    ));
   }
 }
 
@@ -572,6 +583,10 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           CRM_EFT_BAO_EFT::saveChapterFund($params);
         }
       }
+      break;
+
+    case "CRM_Financial_Form_PaymentEdit":
+      CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code_trxn'], $form->_submitValues['fund_code_trxn'], $form->getVar('_id'), "civicrm_financial_trxn");
       break;
 
     default:

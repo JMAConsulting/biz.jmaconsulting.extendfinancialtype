@@ -272,6 +272,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       "civicrm_contribution_page",
       "civicrm_price_field_value",
       "civicrm_payment_processor",
+      "civicrm_financial_trxn",
     ])) {
       $params = [
         'entity_id' => $entityId,
@@ -279,7 +280,6 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         'chapter' => $chapter,
         'fund' => $fund,
       ];
-      self::saveChapterFund($params);
     }
     if ($entityTable == "civicrm_price_field") {
       // We save the same for price field and price field value.
