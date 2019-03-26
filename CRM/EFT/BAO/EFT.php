@@ -107,8 +107,36 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         self::saveChapterFund($params);
       }
       
-      if ($fts) {
+      if (!empty($fts)) {
         return $fts;
+      }
+    }
+    if ($entityTable == "civicrm_contribution_recur") {
+      $params = [
+        'entity_id' => $entityId,
+        'entity_table' => $entityTable,
+      ];
+      if ($isPriceSet) {
+        // Save chapter and fund as is.
+        $params['chapter'] = $chapter;
+        $params['fund'] = $fund;
+        self::saveChapterFund($params);
+      }
+      else {
+        if (!$fund['isMembership']) {
+          $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+          $params['chapter'] = $chapterFund['chapter_code'];
+          $params['fund'] = $chapterFund['fund_code'];
+        }
+        elseif ($fund['isMembership']) {
+          $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
+          if (empty($chapterFund)) {
+            $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+          }
+          $params['chapter'] = $chapterFund['chapter_code'];
+          $params['fund'] = $chapterFund['fund_code'];
+        }
+        self::saveChapterFund($params);
       }
     }
     if ($entityTable == "civicrm_contribution_page_online") {
@@ -280,6 +308,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         'chapter' => $chapter,
         'fund' => $fund,
       ];
+      self::saveChapterFund($params);
     }
     if ($entityTable == "civicrm_price_field") {
       // We save the same for price field and price field value.

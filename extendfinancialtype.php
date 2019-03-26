@@ -541,28 +541,28 @@ function addGiftFT($giftType) {
   return FALSE;
 }
 
-function extendfinancialtype_civicrm_postSave_civicrm_contribution_soft($dao) {
-  // Save appropriate gift types for In Honour Of and In Memory Of.
-  if ($dao->id) {
-    $softCreditTypes = CRM_Core_OptionGroup::values('soft_credit_type');
-    if (in_array($softCreditTypes[$dao->soft_credit_type_id], ["In Honor of", "In Memory of"])) {
-      // If financial type ID of contribution is general donation, change financial account id.
-      $ft = CRM_Core_DAO::singleValueQuery("SELECT f.name
-        FROM civicrm_contribution c
-        INNER JOIN civicrm_financial_type f ON f.id = c.financial_type_id
-        WHERE c.id = {$dao->contribution_id}");
-      if ($ft == "General Donation") {
-        // We change the financial account in this case to Memorial Donation.
-        $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE accounting_code = 4012");
-        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($dao->contribution_id)[0];
-        $fi = reset($fi);
-        if ($fi) {
-          civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]);
-        }
-      }
-    }
-  }
-}
+/* function extendfinancialtype_civicrm_postSave_civicrm_contribution_soft($dao) { */
+/*   // Save appropriate gift types for In Honour Of and In Memory Of. */
+/*   if ($dao->id) { */
+/*     $softCreditTypes = CRM_Core_OptionGroup::values('soft_credit_type'); */
+/*     if (in_array($softCreditTypes[$dao->soft_credit_type_id], ["In Honor of", "In Memory of"])) { */
+/*       // If financial type ID of contribution is general donation, change financial account id. */
+/*       $ft = CRM_Core_DAO::singleValueQuery("SELECT f.name */
+/*         FROM civicrm_contribution c */
+/*         INNER JOIN civicrm_financial_type f ON f.id = c.financial_type_id */
+/*         WHERE c.id = {$dao->contribution_id}"); */
+/*       if ($ft == "General Donation") { */
+/*         // We change the financial account in this case to Memorial Donation. */
+/*         $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE accounting_code = 4012"); */
+/*         $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($dao->contribution_id)[0]; */
+/*         $fi = reset($fi); */
+/*         if ($fi) { */
+/*           civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]); */
+/*         } */
+/*       } */
+/*     } */
+/*   } */
+/* } */
 
 function extendfinancialtype_civicrm_postSave_civicrm_price_set($dao) {
   if ($dao->id) {
@@ -599,6 +599,45 @@ function extendfinancialtype_civicrm_postSave_civicrm_payment_processor($dao) {
     }
     if (!empty($pids)) {
       CRM_Core_Smarty::singleton()->assign('eft_payment_processors', $pids);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_civicrm_postProcess
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
+ */
+function extendfinancialtype_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName == "Contribution" && $op == 'create') {
+    if (!empty($objectRef->contribution_recur_id)) {
+      $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($objectRef->contribution_recur_id, "civicrm_contribution_recur");
+      if (!empty($chapterFund)) {
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $objectId, "civicrm_line_item", TRUE);
+        foreach ($fts as $ft) {
+          if (!empty($ft)) {
+            $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code 
+              FROM civicrm_contribution c
+              INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
+              INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
+              INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
+              WHERE c.id = {$objectId} ORDER BY ft.id DESC LIMIT 1")->fetchAll()[0];
+            $params = [
+              "entity_id" => $ft,
+              "entity_table" => "civicrm_financial_trxn",
+            ];
+            if (!empty($lastFt)) {
+              $params['chapter'] = $lastFt['chapter_code'];
+              $params['fund'] = $lastFt['fund_code'];
+            }
+            else {
+              $params['chapter'] = 1000;
+              $params['fund'] = 1000;
+            }
+            CRM_EFT_BAO_EFT::saveChapterFund($params);
+          }
+        }
+      }
     }
   }
 }
@@ -771,15 +810,19 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
           INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
           WHERE c.id = {$form->_id} ORDER BY ft.id DESC LIMIT 1")->fetchAll()[0];
+        $params = [
+          "entity_id" => $ft,
+          "entity_table" => "civicrm_financial_trxn",
+        ];
         if (!empty($lastFt)) {
-          $params = [
-            "entity_id" => $ft,
-            "entity_table" => "civicrm_financial_trxn",
-            "chapter" => $lastFt['chapter_code'],
-            "fund" => $lastFt['fund_code'],
-          ];
-          CRM_EFT_BAO_EFT::saveChapterFund($params);
+          $params['chapter'] = $lastFt['chapter_code'];
+          $params['fund'] = $lastFt['fund_code'];
         }
+        else {
+          $params['chapter'] = 1000;
+          $params['fund'] = 1000;
+        }
+        CRM_EFT_BAO_EFT::saveChapterFund($params);
       }
       $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0];
       $fi = reset($fi);
@@ -816,31 +859,22 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     if ($form->_id == DONATION_PAGE) {
       if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL)) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item", TRUE);
+        // Add chapter and fund for recurring contributions.
+        if (CRM_Utils_Array::value('is_recur', $form->_values)) {
+          CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE);
+        }
         $chapterFund = [
           'chapter_code' => $submitChapter,
           'fund_code' => $submitChapter,
         ];
       }
-/*
-      // Change FT, FA based on gift type.
-      $giftType = civicrm_api3('CustomValue', 'get', [
-        'sequential' => 1,
-        'return' => ["custom_13"],
-        'entity_id' => $form->_contributionID,
-      ])['values'][0]['latest'];
-      if (!empty($giftType)) {
-        $fa = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE name = '{$giftType}'");
-        $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_contributionID)[0];
-        $fi = reset($fi);
-        if ($fi) {
-          civicrm_api3('FinancialItem', 'create', ['id' => $fi, 'financial_account_id' => $fa]);
-        }
-        $ftsi
-      }
-*/
     }
     else {
       $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
+      // Add chapter and fund for recurring contributions.
+      if (CRM_Utils_Array::value('is_recur', $form->_values)) {
+        CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_params['contributionRecurID'], "civicrm_contribution_recur");
+      }
       // Get chapter and fund for payment processor id.
       $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
       if ($paymentProcessorId) {
