@@ -652,7 +652,12 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     || CRM_Utils_Array::value('fund_code_trxn', $form->_submitValues) || CRM_Utils_Array::value('chapter_code_trxn', $form->_submitValues)) {
     switch ($formName) {
     case "CRM_Price_Form_Set":
-      $sid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_set_id');
+      if ($form->_action & CRM_Core_Action::ADD) {
+        $sid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_set_id');
+      }
+      elseif ($form->_action & CRM_Core_Action::UPDATE) {
+        $sid = $form->getVar('_sid');
+      }
       if (!$sid) {
         return;
       }
@@ -660,7 +665,12 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       break;
 
     case "CRM_Price_Form_Field":
-      $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
+      if ($form->_action & CRM_Core_Action::ADD) {
+        $fid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_id');
+      }
+      elseif ($form->_action & CRM_Core_Action::UPDATE) {
+        $fid = $form->getVar('_fid');
+      }
       if (!$fid) {
         return;
       }
@@ -674,7 +684,12 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       break;
 
     case "CRM_Price_Form_Option":
-      $oid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_value_id');
+      if ($form->_action & CRM_Core_Action::ADD) {
+        $oid = CRM_Core_Smarty::singleton()->get_template_vars('eft_price_field_value_id');
+      }
+      elseif ($form->_action & CRM_Core_Action::UPDATE) {
+        $oid = $form->getVar('_oid');
+      }
       if (!$oid) {
         return;
       }
