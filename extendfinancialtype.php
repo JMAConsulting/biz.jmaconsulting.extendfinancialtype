@@ -705,7 +705,12 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       break;
 
     case "CRM_Member_Form_MembershipType":
-      $mid = CRM_Core_Smarty::singleton()->get_template_vars('eft_membership_type_id');
+      if ($form->_action & CRM_Core_Action::ADD) {
+        $mid = CRM_Core_Smarty::singleton()->get_template_vars('eft_membership_type_id');
+      }
+      elseif ($form->_action & CRM_Core_Action::UPDATE) {
+        $mid = $form->getVar('_id');
+      }
       CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $mid, "civicrm_membership_type");
       break;
 
