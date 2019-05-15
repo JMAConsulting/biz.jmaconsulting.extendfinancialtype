@@ -937,6 +937,42 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 }
 
 function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
+  if ('CRM_Report_Form_Contribute_Detail' == get_class($object)) {
+    if ($varType == 'columns') {
+      $var['civicrm_fund_id']['fields']['fund_id'] = array(
+        'name' => 'fund_id',
+        'title' => ts('Fund ID'),
+        'dbAlias' => "CONCAT(cfa.accounting_code, '-', cefa.chapter_code)",
+      );
+      $var['civicrm_financial_trxn']['fields']['pan_truncation'] = array(
+        'name' => 'pan_truncation',
+        'title' => ts('Last 4 digits of the card'),
+      );
+    }
+    if ($varType == 'sql') {
+      $object->_originVar = NULL;
+      $params = $object->getVar('_params');
+      $aliases = $object->getVar('_aliases');
+      $fromClause = "
+        LEFT JOIN civicrm_entity_financial_account efa ON efa.entity_id = contribution_civireport.financial_type_id
+          AND efa.entity_table = 'civicrm_financial_type' AND efa.account_relationship = 1
+        LEFT JOIN civicrm_financial_account cfa ON cfa.id = efa.financial_account_id
+        LEFT JOIN civicrm_chapter_entity cefa ON cefa.entity_id = contribution_civireport.id AND cefa.entity_table = 'civicrm_contribution'
+        LEFT JOIN civicrm_entity_financial_trxn eftpt ON eftpt.entity_id = contribution_civireport.id AND eftpt.entity_table = 'civicrm_contribution'
+        LEFT JOIN civicrm_financial_trxn ftpt ON ftpt.id = eftpt.financial_trxn_id
+      ";
+      $from = $object->getVar('_from') . $fromClause;
+      $aclFrom = $object->getVar('_aclFrom') . $fromClause;
+      $object->_originVar = $from;
+      $object->setVar('_from', $from);
+      $object->setVar('_aclFrom', $aclFrom);
+    }
+    elseif ($varType == 'rows') {
+      if (!empty($object->_originVar)) {
+        $object->setVar('_from', $object->_originVar);
+      }
+    }
+  }
   if ('CRM_Report_Form_Contribute_Bookkeeping' == get_class($object)) {
     if ($varType == 'columns') {
       $var['civicrm_chapter_entity']['fields']['chapter_code_from'] = array(
