@@ -890,6 +890,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       }
     }
     else {
+      if (!empty($memberItems['isMembership'])) {
+        $form->_params['contributionPageID'] = $form->_membershipBlock['entity_id'];
+      }
       $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
       // Add chapter and fund for recurring contributions.
       if (CRM_Utils_Array::value('is_recur', $form->_values)) {
