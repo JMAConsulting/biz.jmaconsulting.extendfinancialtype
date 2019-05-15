@@ -939,7 +939,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
   if ('CRM_Report_Form_Contribute_Detail' == get_class($object)) {
     if ($varType == 'columns') {
-      $var['civicrm_fund_id']['fields']['fund_id'] = array(
+      $var['civicrm_contribution']['fields']['fund_id'] = array(
         'name' => 'fund_id',
         'title' => ts('Fund ID'),
         'dbAlias' => "CONCAT(cfa.accounting_code, '-', cefa.chapter_code)",
@@ -947,6 +947,11 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_financial_trxn']['fields']['pan_truncation'] = array(
         'name' => 'pan_truncation',
         'title' => ts('Last 4 digits of the card'),
+      );
+      $var['civicrm_contribution']['fields']['invoice_id'] = array(
+        'name' => 'invoice_id',
+        'title' => ts('Invoice Number'),
+        'dbAlias' => "SUBSTRING(contribution_civireport.invoice_id, -10)",
       );
     }
     if ($varType == 'sql') {
