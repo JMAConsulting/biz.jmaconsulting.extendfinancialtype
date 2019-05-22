@@ -469,6 +469,9 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     // get the price set associated with offline contribution record.
     $priceSetId = CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', 'default_contribution_amount', 'id', 'name');
     $this->_priceSet = current(CRM_Price_BAO_PriceSet::getSetDetail($priceSetId));
+    $defaultPriceSet = reset($this->_priceSet['fields']);
+    $this->_priceSet = array();
+    $this->_priceSet['fields'][1] = $defaultPriceSet;
     $priceFieldID = CRM_Price_BAO_PriceSet::getOnlyPriceFieldID($this->_priceSet);
     $priceFieldValueID = CRM_Price_BAO_PriceSet::getOnlyPriceFieldValueID($this->_priceSet);
 
