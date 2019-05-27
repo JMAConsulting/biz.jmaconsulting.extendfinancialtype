@@ -298,6 +298,43 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
     }
   }
+  if ($formName == "CRM_Contribute_Form_Contribution_Main") {
+    if (!empty($form->_membershipBlock)) {
+      // This is a membership page, so we add the chapter dropdown by default.
+      $chapters = CRM_Core_OptionGroup::values('chapter_codes');
+      $validChapters = [
+        "Provincial Office",
+        "Central West (Peel, Wellington, Waterloo, Halton, Hamilton)",
+        "Chatham",
+        "Durham",
+        "Grey/Bruce",
+        "Huron Perth",
+        "Kingston",
+        "London",
+        "Metro Toronto",
+        "Niagara Region",
+        "North East",
+        "Ottawa",
+        "Peterborough",
+        "Sault St. Marie",
+        "Simcoe",
+        "Sudbury & District",
+        "Thunder Bay & District",
+        "Upper Canada",
+        "Windsor/Essex",
+        "York Region",
+      ];
+      asort($chapters);
+      $chapters = array_intersect($chapters, $validChapters);
+      $chapters = [1000 => "Provincial Office"] + $chapters;
+      $form->add('select', 'chapter_code',
+        ts('Chapter'), $chapters, FALSE, array('class' => 'crm-select2 ')
+      );
+      CRM_Core_Region::instance('page-body')->add(array(
+        'template' => 'CRM/EFT/AddChapterMem.tpl',
+      ));
+    }
+  }
   if (array_key_exists('financial_type_id', $form->_elementIndex)
       || (in_array($formName, ["CRM_Event_Form_Participant", "CRM_Contribute_Form_AdditionalPayment"]) && ($form->_action & CRM_Core_Action::ADD))) {
     if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership" || $formName == "CRM_Contribute_Form_Contribution")) {
@@ -602,9 +639,9 @@ function extendfinancialtype_civicrm_postSave_civicrm_payment_processor($dao) {
 }
 
 /**
- * Implementation of hook_civicrm_postProcess
+ * Implementation of hook_civicrm_post
  *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postProcess
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_post
  */
 function extendfinancialtype_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   if ($objectName == "Contribution" && $op == 'create') {
@@ -745,6 +782,14 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code'], $form->_submitValues['fund_code'], $contributionId, "civicrm_line_item", $isPriceSet);
         CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $form->_submitValues);
       }
+      // We save the chapter and fund for membership as well.
+      $memChapParams = [
+        'entity_id' => $form->_id,
+        'entity_table' => "civicrm_membership",
+        'chapter' => $form->_submitValues['chapter_code'],
+        'fund' => $form->_submitValues['fund_code'],
+      ];
+      CRM_EFT_BAO_EFT::saveChapterFund($memChapParams);
       break;
 
     case "CRM_Admin_Form_PaymentProcessor":
@@ -869,6 +914,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
+    $manualChapter = [];
     $memberItems = [
       'isMembership' => CRM_Utils_Array::value('isMembership', $form->_values, NULL),
       'memType' => $form->get('membershipTypeID'),
@@ -891,15 +937,36 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       if (!empty($memberItems['isMembership'])) {
         $form->_params['contributionPageID'] = $form->_membershipBlock['entity_id'];
       }
-      $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
-      // Add chapter and fund for recurring contributions.
-      if (CRM_Utils_Array::value('is_recur', $form->_values)) {
-        CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_params['contributionRecurID'], "civicrm_contribution_recur");
+      if (!empty($form->_params['chapter_code']) && !empty($memberItems['isMembership'])) {
+        $chapterFund = [
+          'chapter_code' => $form->_params['chapter_code'],
+          'fund_code' => $form->_params['chapter_code'],
+        ];
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online", TRUE);
+        // Add chapter and fund for recurring contributions.
+        if (CRM_Utils_Array::value('is_recur', $form->_values)) {
+          CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $form->_params['chapter_code'], $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE);
+        }
+        // We save the chapter and fund for membership as well.
+        $memChapParams = [
+          'entity_id' => $form->_params['membershipID'],
+          'entity_table' => "civicrm_membership",
+          'chapter' => $form->_params['chapter_code'],
+          'fund' => $form->_params['chapter_code'],
+        ];
+        CRM_EFT_BAO_EFT::saveChapterFund($memChapParams);
       }
-      // Get chapter and fund for payment processor id.
-      $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
-      if ($paymentProcessorId) {
-        $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+      else {
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
+        // Add chapter and fund for recurring contributions.
+        if (CRM_Utils_Array::value('is_recur', $form->_values)) {
+          CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_params['contributionRecurID'], "civicrm_contribution_recur");
+        }
+        // Get chapter and fund for payment processor id.
+        $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
+        if ($paymentProcessorId) {
+          $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($paymentProcessorId, "civicrm_payment_processor");
+        }
       }
     }
     $ftParams = [

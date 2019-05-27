@@ -140,6 +140,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       }
     }
     if ($entityTable == "civicrm_contribution_page_online") {
+      $isBypass = FALSE;
       $lineItems = civicrm_api3('LineItem', 'get', [
         'contribution_id' => $entityId,
       ])['values'];
@@ -164,13 +165,22 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
         }
-        elseif ($fund['isMembership']) {
+        elseif ($fund['isMembership'] && !$isPriceSet) {
           $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
           if (empty($chapterFund)) {
             $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
           }
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
+        }
+        elseif ($fund['isMembership'] && $isPriceSet) {
+          $params['chapter'] = $chapter;
+          $params['fund'] = $chapter;
+          $isBypass = TRUE;
+          $chapterFund = [
+            'chapter_code' => $chapter,
+            'fund_code' => $chapter,
+          ];
         }
         self::saveChapterFund($params);
 
@@ -200,7 +210,9 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         }
       }
       // Add chapter code for contribution as well.
-      $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+      if (!$isBypass) {
+        $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+      }
       $params = [
         'entity_id' => $entityId,
         'entity_table' => "civicrm_contribution",
