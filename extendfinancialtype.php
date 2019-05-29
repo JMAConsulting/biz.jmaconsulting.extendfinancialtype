@@ -1093,4 +1093,21 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var->setVar('_from', $from);
     }
   }
+  if ('CRM_Report_Form_Member_Detail' == get_class($object)) {
+    if ($varType == 'columns') {
+      $var['civicrm_chapter_entity']['fields']['membership_chapter'] = array(
+        'name' => 'membership_chapter',
+        'title' => ts('Membership for which chapter'),
+        'dbAlias' => 'covc.label',
+      );
+    }
+    if ($varType == 'sql') {
+      $from = $var->getVar('_from');
+      $from .= "
+      LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = membership_civireport.id AND ce.entity_table = 'civicrm_membership'
+      LEFT JOIN civicrm_option_group cogc ON cogc.name = 'chapter_codes'
+      LEFT JOIN civicrm_option_value covc ON (covc.value = ce.chapter_code AND covc.option_group_id = cogc.id)";
+      $var->setVar('_from', $from);
+    }
+  }
 }
