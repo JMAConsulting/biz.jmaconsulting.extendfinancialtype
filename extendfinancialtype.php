@@ -1071,6 +1071,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_chapter_entity']['fields']['fund_id'] = array(
         'name' => 'fund_id',
         'title' => ts('Fund ID'),
+        'default' => TRUE,
         'dbAlias' => 'CASE
           WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
           THEN  CONCAT(financial_account_civireport_credit_1.accounting_code, "-", ce_to.chapter_code)
@@ -1099,7 +1100,6 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'membership_chapter',
         'title' => ts('Membership for which chapter'),
         'dbAlias' => 'covc.label',
-        'default' => TRUE,
       );
     }
     if ($varType == 'sql') {
