@@ -1099,6 +1099,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'membership_chapter',
         'title' => ts('Membership for which chapter'),
         'dbAlias' => 'covc.label',
+        'default' => TRUE,
       );
     }
     if ($varType == 'sql') {
