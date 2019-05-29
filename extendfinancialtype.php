@@ -1068,6 +1068,11 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'title' => ts('Fund Code - Debit'),
         'dbAlias' => 'CONCAT(ce_to.fund_code, " ", covf_to.label)',
       );
+      $var['civicrm_chapter_entity']['fields']['fund_id'] = array(
+        'name' => 'fund_id',
+        'title' => ts('Fund ID'),
+        'dbAlias' => 'CONCAT(civicrm_financial_account_credit_accounting_code, "-", ce_to.chapter_code)',
+      );
     }
     if ($varType == 'sql') {
       $from = $var->getVar('_from');
