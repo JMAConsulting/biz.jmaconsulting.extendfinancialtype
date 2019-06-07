@@ -335,6 +335,33 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       ));
     }
   }
+  if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership")) {
+    $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    asort($chapterCodes);
+    asort($fundCodes);
+    $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
+    $defaults = ['chapter_code' => 1000, 'fund_code' => 1000];
+    if (!empty($form->_id)) {
+      $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->_id, "civicrm_membership");
+      if (!empty($defaults)) {
+        $defaults = ['chapter_code' => $defaults['chapter_code'], 'fund_code' => $defaults['fund_code']];
+      }
+    }
+    $form->setDefaults($defaults);
+    $form->add('select', 'chapter_code',
+      ts('Chapter Code'),
+      $chapterCodes
+    );
+    $form->add('select', 'fund_code',
+      ts('Fund Code'),
+      $fundCodes
+    );
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/EFT/AddChapterMem.tpl',
+    ));
+    $form->assign('isBackOffice', TRUE);
+  }
   if (array_key_exists('financial_type_id', $form->_elementIndex)
       || (in_array($formName, ["CRM_Event_Form_Participant", "CRM_Contribute_Form_AdditionalPayment"]) && ($form->_action & CRM_Core_Action::ADD))) {
     if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership" || $formName == "CRM_Contribute_Form_Contribution")) {
