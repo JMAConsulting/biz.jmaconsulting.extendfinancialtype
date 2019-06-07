@@ -850,6 +850,22 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
 
           // JMA chapter fund processing for membership
           $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterCredit, $fundCredit, $contribution->id, "civicrm_line_item", TRUE);
+          // Set contribution note, non deductible amount and campaign.
+          if (!empty($contrbutionParams['contribution_note'])) {
+            civicrm_api3('Note', 'create', [
+              'entity_table' => 'civicrm_contribution',
+              'entity_id' => $contribution->id,
+              'note' => $contrbutionParams['contribution_note'],
+              'contact_id' => $contrbutionParams['contact_id'],
+            ]);
+          }
+          if (!empty($contrbutionParams['contribution_campaign_id']) || !empty($contrbutionParams['non_deductible_amount'])) {
+            civicrm_api3('Contribution', 'create', [
+              'id' => $contribution->id,
+              'non_deductible_amount' => $contrbutionParams['non_deductible_amount'],
+              'campaign_id' => $contrbutionParams['contribution_campaign_id'],
+            ]);
+          }
           CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $trxnChapterFund);
           
           $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code
@@ -904,6 +920,22 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
 
           // JMA chapter fund processing for membership
           $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE membership_id = {$membership->id}");
+          // Set contribution note, non deductible amount and campaign.
+          if (!empty($value['contribution_note'])) {
+            civicrm_api3('Note', 'create', [
+              'entity_table' => 'civicrm_contribution',
+              'entity_id' => $contributionId,
+              'note' => $value['contribution_note'],
+              'contact_id' => $value['contact_id'],
+            ]);
+          }
+          if (!empty($value['contribution_campaign_id']) || !empty($value['non_deductible_amount'])) {
+            civicrm_api3('Contribution', 'create', [
+              'id' => $contributionId,
+              'non_deductible_amount' => $value['non_deductible_amount'],
+              'campaign_id' => $value['contribution_campaign_id'],
+            ]);
+          }
           $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterCredit, $fundCredit, $contributionId, "civicrm_line_item", TRUE);
           CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $trxnChapterFund);
           

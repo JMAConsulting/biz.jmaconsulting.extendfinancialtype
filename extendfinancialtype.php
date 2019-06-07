@@ -335,6 +335,33 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       ));
     }
   }
+  if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership")) {
+    $chapterCodes = CRM_Core_OptionGroup::values('chapter_codes');
+    $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
+    asort($chapterCodes);
+    asort($fundCodes);
+    $chapterCodes[1000] = $fundCodes[1000] = "Member-at-Large";
+    $defaults = ['chapter_code' => 1000, 'fund_code' => 1000];
+    if (!empty($form->_id)) {
+      $defaults = CRM_EFT_BAO_EFT::getChapterFund($form->_id, "civicrm_membership");
+      if (!empty($defaults)) {
+        $defaults = ['chapter_code' => $defaults['chapter_code'], 'fund_code' => $defaults['fund_code']];
+      }
+    }
+    $form->setDefaults($defaults);
+    $form->add('select', 'chapter_code',
+      ts('Chapter Code'),
+      $chapterCodes
+    );
+    $form->add('select', 'fund_code',
+      ts('Fund Code'),
+      $fundCodes
+    );
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => 'CRM/EFT/AddChapterMem.tpl',
+    ));
+    $form->assign('isBackOffice', TRUE);
+  }
   if (array_key_exists('financial_type_id', $form->_elementIndex)
       || (in_array($formName, ["CRM_Event_Form_Participant", "CRM_Contribute_Form_AdditionalPayment"]) && ($form->_action & CRM_Core_Action::ADD))) {
     if (($form->_action & CRM_Core_Action::UPDATE) && ($formName == "CRM_Member_Form_Membership" || $formName == "CRM_Contribute_Form_Contribution")) {
@@ -1071,6 +1098,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_chapter_entity']['fields']['fund_id'] = array(
         'name' => 'fund_id',
         'title' => ts('Fund ID'),
+        'default' => TRUE,
         'dbAlias' => 'CASE
           WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
           THEN  CONCAT(financial_account_civireport_credit_1.accounting_code, "-", ce_to.chapter_code)
@@ -1090,6 +1118,23 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       LEFT JOIN civicrm_option_value covf_to ON (covf_to.value = ce_to.fund_code AND covf_to.option_group_id = cogf.id)
       LEFT JOIN civicrm_option_value covc_from ON (covc_from.value = ce_from.chapter_code AND covc_from.option_group_id = cogc.id)
       LEFT JOIN civicrm_option_value covc_to ON (covc_to.value = ce_to.chapter_code AND covc_to.option_group_id = cogc.id)";
+      $var->setVar('_from', $from);
+    }
+  }
+  if ('CRM_Report_Form_Member_Detail' == get_class($object)) {
+    if ($varType == 'columns') {
+      $var['civicrm_chapter_entity']['fields']['membership_chapter'] = array(
+        'name' => 'membership_chapter',
+        'title' => ts('Membership for which chapter'),
+        'dbAlias' => 'covc.label',
+      );
+    }
+    if ($varType == 'sql') {
+      $from = $var->getVar('_from');
+      $from .= "
+      LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = membership_civireport.id AND ce.entity_table = 'civicrm_membership'
+      LEFT JOIN civicrm_option_group cogc ON cogc.name = 'chapter_codes'
+      LEFT JOIN civicrm_option_value covc ON (covc.value = ce.chapter_code AND covc.option_group_id = cogc.id)";
       $var->setVar('_from', $from);
     }
   }
