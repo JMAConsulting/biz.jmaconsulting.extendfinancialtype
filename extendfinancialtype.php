@@ -965,21 +965,22 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
         $form->_params['contributionPageID'] = $form->_membershipBlock['entity_id'];
       }
       if (!empty($form->_params['chapter_code']) && !empty($memberItems['isMembership'])) {
+        $originalFund = self::getChapterFund($memberItems['memType'], "civicrm_membership_type");
         $chapterFund = [
           'chapter_code' => $form->_params['chapter_code'],
-          'fund_code' => $form->_params['chapter_code'],
+          'fund_code' => $originalFund['fund_code'],
         ];
         $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online", TRUE);
         // Add chapter and fund for recurring contributions.
         if (CRM_Utils_Array::value('is_recur', $form->_values)) {
-          CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $form->_params['chapter_code'], $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE);
+          CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $originalFund['fund_code'], $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE);
         }
         // We save the chapter and fund for membership as well.
         $memChapParams = [
           'entity_id' => $form->_params['membershipID'],
           'entity_table' => "civicrm_membership",
           'chapter' => $form->_params['chapter_code'],
-          'fund' => $form->_params['chapter_code'],
+          'fund' => $originalFund['fund_code'],
         ];
         CRM_EFT_BAO_EFT::saveChapterFund($memChapParams);
       }
