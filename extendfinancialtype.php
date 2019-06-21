@@ -251,7 +251,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       );
     }
   }
-  if ($formName == "CRM_Event_Form_ManageEvent_Registration") {
+  if ($formName == "CRM_Event_Form_ManageEvent_Registration" && ($form->_action & CRM_Core_Action::ADD)) {
     $cid = CRM_Core_Session::singleton()->get('userID');
     if ($cid) {
       $details = CRM_Core_DAO::executeQuery("SELECT display_name, email FROM civicrm_contact c INNER JOIN civicrm_email e ON e.contact_id = c.id WHERE c.id = {$cid} AND e.is_primary = 1")->fetchAll()[0];
@@ -965,7 +965,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
         $form->_params['contributionPageID'] = $form->_membershipBlock['entity_id'];
       }
       if (!empty($form->_params['chapter_code']) && !empty($memberItems['isMembership'])) {
-        $originalFund = self::getChapterFund($memberItems['memType'], "civicrm_membership_type");
+        $originalFund = CRM_EFT_BAO_EFT::getChapterFund($memberItems['memType'], "civicrm_membership_type");
         $chapterFund = [
           'chapter_code' => $form->_params['chapter_code'],
           'fund_code' => $originalFund['fund_code'],
