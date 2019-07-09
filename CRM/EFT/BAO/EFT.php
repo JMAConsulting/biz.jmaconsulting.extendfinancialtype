@@ -411,6 +411,11 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     $eft->chapter_code = $params['chapter'];
     $eft->fund_code = $params['fund'];
     $eft->save();
+
+    // For Membership, we update the custom field as well.
+    if ($params['entity_table'] == "civicrm_membership") {
+      civicrm_api3("Membership", "create", ["id" => $params['entity_id'], "custom_" . MEMBERSHIPFIELD => $params['chapter']]);
+    }
   }
 
   public static function deleteChapterFundEntity($id, $entity) {

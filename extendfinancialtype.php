@@ -3,6 +3,7 @@ define('CHAPTERFUND', 'Chapter_Funds__');
 define('MEMCHAPTERFUND', 'Chapter_Funds_Memberships__');
 define('DONATION_PAGE', 1);
 define('RAISE_THE_FLAG', 23);
+define('MEMBERSHIPFIELD', 7);
 
 require_once 'extendfinancialtype.civix.php';
 
@@ -260,7 +261,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       }
     }
   }
-  if (!in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE])) {
+  if (!in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE, CRM_Core_Action::RENEW])) {
     return;
   }
   if ($formName == "CRM_Price_Form_Field") {
@@ -799,8 +800,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       break;
 
     case "CRM_Member_Form_Membership":
+    case "CRM_Member_Form_MembershipRenewal":
       // Add chapter, fund code for main contribution.
-      $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE membership_id = {$form->_id}");
+      $contributionId = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_membership_payment WHERE membership_id = {$form->_id} ORDER BY id DESC LIMIT 1");
       $isPriceSet = FALSE;
       if (CRM_Utils_Array::value('chapter_code_trxn', $form->_submitValues) || CRM_Utils_Array::value('fund_code_trxn', $form->_submitValues)) {
         $isPriceSet = TRUE;
