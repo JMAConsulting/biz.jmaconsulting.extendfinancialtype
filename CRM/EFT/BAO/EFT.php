@@ -403,7 +403,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         break;
       case 'civicrm_line_item':
         // Get related contribution ID
-        $contributionID = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_line_item WHERE id = %1 AND entity_table = 'civicrm_contribution'", [1 => [$params['entity_id'], "Integer"]]);
+        $contributionID = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_line_item WHERE id = %1", [1 => [$params['entity_id'], "Integer"]]);
         // Get related payments
         $trxns = CRM_Core_DAO::executeQuery("SELECT t.financial_trxn_id, chapter_code, fund_code FROM civicrm_entity_financial_trxn t
             INNER JOIN civicrm_chapter_entity e ON e.entity_id = t.financial_trxn_id AND e.entity_table = 'civicrm_financial_trxn'
