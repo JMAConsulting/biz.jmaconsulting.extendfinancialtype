@@ -423,8 +423,8 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $contribParams = [
         "entity_id" => $contributionID,
         "entity_table" => "civicrm_contribution",
-        "chapter" => CRM_Utils_Array::value('chapter_code', $params),
-        "fund" => CRM_Utils_Array::value('fund_code', $params),
+        "chapter" => CRM_Utils_Array::value('chapter', $params),
+        "fund" => CRM_Utils_Array::value('fund', $params),
       ];
       self::saveChapterFund($contribParams);
     }
