@@ -858,6 +858,14 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     case "CRM_Financial_Form_PaymentEdit":
       CRM_EFT_BAO_EFT::addChapterFund($form->_submitValues['chapter_code_trxn'], $form->_submitValues['fund_code_trxn'], $form->getVar('_id'), "civicrm_financial_trxn");
+      // Check if payments have same chapter and fund code too.
+      $contribChapterParams = [
+        'chapter' => $form->_submitValues['chapter_code_trxn'],
+        'fund' => $form->_submitValues['fund_code_trxn'],
+        'entity_table' => 'civicrm_financial_trxn',
+        'entity_id' => $form->getVar('_id'),
+      ];
+      CRM_EFT_BAO_EFT::checkAndUpdateRelatedContribution($contribChapterParams);
       break;
 
     default:

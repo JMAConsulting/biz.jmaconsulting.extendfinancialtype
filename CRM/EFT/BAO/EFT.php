@@ -383,6 +383,52 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       }
     }
   }
+  
+  public static function checkAndUpdateRelatedContribution($params) {
+    $noUpdate = FALSE;
+    switch ($params['entity_table']) {
+      case 'civicrm_financial_trxn':
+        // Get related contribution ID
+        $contributionID = CRM_Core_DAO::singleValueQuery("SELECT entity_id FROM civicrm_entity_financial_trxn WHERE financial_trxn_id = %1 AND entity_table = 'civicrm_contribution'", [1 => [$params['entity_id'], "Integer"]]);
+        // Get related lineitems and their chapter/funds
+        $lineItems = CRM_Core_DAO::executeQuery("SELECT i.id, chapter_code, fund_code FROM civicrm_line_item i
+            INNER JOIN civicrm_chapter_entity e ON e.entity_id = i.id AND e.entity_table = 'civicrm_line_item'
+            WHERE i.contribution_id = %1", [1 => [$contributionID, "Integer"]])->fetchAll();
+        foreach ($lineItems as $lineItem) {
+          if (($lineItem['chapter_code'] != $params['chapter']) && ($lineItem['fund_code'] != $params['fund'])) {
+            $noUpdate = TRUE;
+            break;
+          }
+        }
+        break;
+      case 'civicrm_line_item':
+        // Get related contribution ID
+        $contributionID = CRM_Core_DAO::singleValueQuery("SELECT contribution_id FROM civicrm_line_item WHERE id = %1 AND entity_table = 'civicrm_contribution'", [1 => [$params['entity_id'], "Integer"]]);
+        // Get related payments
+        $trxns = CRM_Core_DAO::executeQuery("SELECT t.financial_trxn_id, chapter_code, fund_code FROM civicrm_entity_financial_trxn t
+            INNER JOIN civicrm_chapter_entity e ON e.entity_id = t.financial_trxn_id AND e.entity_table = 'civicrm_financial_trxn'
+            WHERE t.entity_id = %1 AND t.entity_table = 'civicrm_contribution'", [1 => [$contributionID, "Integer"]])->fetchAll();
+        foreach ($trxns as $trxn) {
+          if (($trxn['chapter_code'] != $params['chapter']) && ($trxn['fund_code'] != $params['fund'])) {
+            $noUpdate = TRUE;
+            break;
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    if (!$noUpdate) {
+      // Update the contribution as well.
+      $contribParams = [
+        "entity_id" => $contributionID,
+        "entity_table" => "civicrm_contribution",
+        "chapter" => CRM_Utils_Array::value('chapter_code', $params),
+        "fund" => CRM_Utils_Array::value('fund_code', $params),
+      ];
+      self::saveChapterFund($contribParams);
+    }
+  }
 
   public static function getLastTrxnId($contributionId) {
     $ft = CRM_Core_DAO::singleValueQuery("SELECT ft.id
