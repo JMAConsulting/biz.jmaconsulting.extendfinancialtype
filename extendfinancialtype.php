@@ -469,7 +469,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
 
   if (array_key_exists('payment_instrument_id', $form->_elementIndex) || (in_array($formName, ["CRM_Contribute_Form_Contribution", "CRM_Event_Form_Participant"]) && ($form->_action & CRM_Core_Action::ADD))
     && (in_array($form->_action, [CRM_Core_Action::ADD, CRM_Core_Action::UPDATE]))) {
-    
+
     if (in_array($formName, ["CRM_Financial_Form_FinancialBatch", "CRM_Financial_Form_Search", "CRM_Admin_Form_PaymentProcessor"])) {
       return;
     }
@@ -679,7 +679,7 @@ function extendfinancialtype_civicrm_post($op, $objectName, $objectId, &$objectR
         $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $objectId, "civicrm_line_item", TRUE);
         foreach ($fts as $ft) {
           if (!empty($ft)) {
-            $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code 
+            $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code
               FROM civicrm_contribution c
               INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
               INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
@@ -904,7 +904,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       // Get last inserted financial trxn if updated.
       $ft = CRM_EFT_BAO_EFT::getLastTrxnId($form->_id);
       if (!empty($ft)) {
-        $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code 
+        $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code
           FROM civicrm_contribution c
           INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
           INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
@@ -1049,6 +1049,38 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'fund_id',
         'title' => ts('Fund ID'),
         'dbAlias' => "CONCAT(cfa.accounting_code, '-', cefa.chapter_code)",
+      );
+      $var['civicrm_contribution']['fields']['first_time_contribution'] = array(
+        'name' => 'first_time_contribution',
+        'title' => ts('First Time Contribution amount and date'),
+        'dbAlias' => "(
+          SELECT CONCAT(cc.total_amount, '-', DATE(cc.receive_date))
+           FROM civicrm_contribution cc
+           WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date ASC LIMIT 1
+         )",
+      );
+      $var['civicrm_contribution']['fields']['last_time_contribution'] = array(
+        'name' => 'last_time_contribution',
+        'title' => ts('Last Time Contribution amount and date'),
+        'dbAlias' => "(
+          SELECT CONCAT(cc.total_amount, '-', DATE(cc.receive_date))
+           FROM civicrm_contribution cc
+           WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date DESC LIMIT 1
+         )",
+      );
+      $var['civicrm_contribution']['fields']['total_contribution'] = array(
+        'name' => 'total_contribution',
+        'title' => ts('Total Contribution(s)'),
+        'dbAlias' => "(
+          SELECT COUNT(DISTINCT cc.id)
+           FROM civicrm_contribution cc
+           WHERE cc.contact_id = contact_civireport.id
+         )",
+      );
+      $var['civicrm_contribution']['filters']['fund_id'] = array(
+        'name' => 'fund_id',
+        'title' => ts('Fund ID'),
+        'dbAlias' => "civicrm_contribution_fund_id",
       );
       $var['civicrm_financial_trxn']['fields']['pan_truncation'] = array(
         'name' => 'pan_truncation',
