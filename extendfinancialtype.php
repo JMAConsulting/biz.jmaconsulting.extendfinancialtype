@@ -1047,6 +1047,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
     if ($varType == 'columns') {
       $var['civicrm_contribution']['fields']['fund_id'] = array(
         'name' => 'fund_id',
+        'type' => CRM_Utils_Type::T_STRING,
         'title' => ts('Fund ID'),
         'dbAlias' => "CONCAT(cfa.accounting_code, '-', cefa.chapter_code)",
       );
@@ -1054,7 +1055,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'first_time_contribution',
         'title' => ts('First Time Contribution amount and date'),
         'dbAlias' => "(
-          SELECT CONCAT(cc.total_amount, '-', DATE(cc.receive_date))
+          SELECT CONCAT('$', cc.total_amount, ' ', DATE_FORMAT(DATE(cc.receive_date), \"%M %d %Y\"))
            FROM civicrm_contribution cc
            WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date ASC LIMIT 1
          )",
@@ -1063,7 +1064,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'last_time_contribution',
         'title' => ts('Last Time Contribution amount and date'),
         'dbAlias' => "(
-          SELECT CONCAT(cc.total_amount, '-', DATE(cc.receive_date))
+          SELECT CONCAT(cc.total_amount, ' ', DATE_FORMAT(DATE(cc.receive_date), \"%M %d %Y\"))
            FROM civicrm_contribution cc
            WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date DESC LIMIT 1
          )",
@@ -1080,6 +1081,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_contribution']['filters']['fund_id'] = array(
         'name' => 'fund_id',
         'title' => ts('Fund ID'),
+        'type' => CRM_Utils_Type::T_STRING,
         'dbAlias' => "civicrm_contribution_fund_id",
       );
       $var['civicrm_financial_trxn']['fields']['pan_truncation'] = array(
