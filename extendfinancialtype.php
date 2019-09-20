@@ -1055,7 +1055,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'first_time_contribution',
         'title' => ts('First Time Contribution amount and date'),
         'dbAlias' => "(
-          SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%M %d %Y\"))
+          SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%D %M %Y\"))
            FROM civicrm_contribution cc
            WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date ASC LIMIT 1
          )",
@@ -1064,7 +1064,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
         'name' => 'last_time_contribution',
         'title' => ts('Last Time Contribution amount and date'),
         'dbAlias' => "(
-          SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%M %d %Y\"))
+          SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%D %M %Y\"))
            FROM civicrm_contribution cc
            WHERE cc.contact_id = contact_civireport.id ORDER BY cc.receive_date DESC LIMIT 1
          )",
