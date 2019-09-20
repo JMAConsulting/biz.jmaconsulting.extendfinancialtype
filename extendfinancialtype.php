@@ -1080,7 +1080,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       );
       $var['civicrm_contribution']['filters']['fund_id'] = array(
         'name' => 'fund_id',
-        'title' => ts('Fund ID (Chapter Code)'),
+        'title' => ts('Fund ID (Fund Code)'),
         'type' => CRM_Utils_Type::T_STRING,
         'dbAlias' => "cefa.chapter_code",
       );
