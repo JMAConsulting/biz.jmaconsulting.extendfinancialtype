@@ -160,10 +160,20 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           $params['chapter'] = $lineItemChapterFund['chapter_code'];
           $params['fund'] = $lineItemChapterFund['fund_code'];
         }
-        elseif (!$fund['isMembership']) {
+        elseif (!$fund['isMembership'] && !$isPriceSet) {
           $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
+        }
+        elseif (!$fund['isMembership'] && $isPriceSet) {
+          $originalFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
+          $params['chapter'] = $chapter;
+          $params['fund'] = $originalFund['fund_code'];
+          $isBypass = TRUE;
+          $chapterFund = [
+            'chapter_code' => $chapter,
+            'fund_code' => $originalFund['fund_code'],
+          ];
         }
         elseif ($fund['isMembership'] && !$isPriceSet) {
           $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
