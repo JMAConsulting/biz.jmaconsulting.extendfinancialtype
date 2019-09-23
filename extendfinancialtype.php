@@ -993,6 +993,12 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           'fund' => $originalFund['fund_code'],
         ];
         CRM_EFT_BAO_EFT::saveChapterFund($memChapParams);
+
+        // If there is an other contribution.
+        if (!empty($form->_values['contribution_other_id'])) {
+          $memberItems['isMembership'] = FALSE;
+          $otherFts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_values['contribution_other_id'], "civicrm_contribution_page_online", TRUE);
+        }
       }
       else {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['contributionPageID'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online");
@@ -1013,6 +1019,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     ];
     if (!empty($ftParams['chapter_code_trxn']) || !empty($ftParams['fund_code_trxn'])) {
       CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $ftParams);
+      if (!empty($otherFts)) {
+        CRM_EFT_BAO_EFT::addTrxnChapterFund($otherFts, $ftParams);
+      }
     }
   }
   if ($formName == "CRM_Event_Form_Registration_Confirm") {
