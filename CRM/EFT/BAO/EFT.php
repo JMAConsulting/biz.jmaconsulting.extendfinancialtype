@@ -96,7 +96,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           }
         }
       }
-      if ($chapter && $fund) {
+      if (!empty($chapter) && !empty($fund)) {
         // Add chapter code for contribution as well.
         $params = [
           'entity_id' => $entityId,
@@ -225,13 +225,15 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       if (!$isBypass) {
         $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
       }
-      $params = [
-        'entity_id' => $entityId,
-        'entity_table' => "civicrm_contribution",
-        'chapter' => $chapterFund['chapter_code'],
-        'fund' => $chapterFund['fund_code'],
-      ];
-      self::saveChapterFund($params);
+      if (!empty($chapterFund)) {
+        $params = [
+          'entity_id' => $entityId,
+          'entity_table' => "civicrm_contribution",
+          'chapter' => $chapterFund['chapter_code'],
+          'fund' => $chapterFund['fund_code'],
+        ];
+        self::saveChapterFund($params);
+      }
 
       if ($fts) {
         return $fts;
@@ -429,7 +431,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       default:
         break;
     }
-    if (!$noUpdate) {
+    if (!$noUpdate && !empty($params['chapter']) && !empty($params['fund'])) {
       // Update the contribution as well.
       $contribParams = [
         "entity_id" => $contributionID,
