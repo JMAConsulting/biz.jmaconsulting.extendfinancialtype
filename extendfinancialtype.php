@@ -677,6 +677,14 @@ function extendfinancialtype_civicrm_post($op, $objectName, $objectId, &$objectR
       $chapterFund = CRM_EFT_BAO_EFT::getChapterFund($objectRef->contribution_recur_id, "civicrm_contribution_recur");
       if (!empty($chapterFund)) {
         $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterFund['chapter_code'], $chapterFund['fund_code'], $objectId, "civicrm_line_item", TRUE);
+        // Save chapter and fund for this contribution too
+        $chParams = [
+          'entity_id' => $objectId,
+          'entity_table' => 'civicrm_contribution',
+          'chapter' => $chapterFund['chapter_code'],
+          'fund' => $chapterFund['fund_code'],
+        ];
+        CRM_EFT_BAO_EFT::saveChapterFund($chParams);
         foreach ($fts as $ft) {
           if (!empty($ft)) {
             $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code
