@@ -31,7 +31,7 @@
 {literal}
 <script type="text/javascript">
   CRM.$(function ($) {
-    var paymentsTable = $('table.selector');
+    var paymentsTable = $('.payment-details_group').find('table');
     $(paymentsTable).replaceWith('<table class="selector row-highlight">' + $('#newPaymentTable').html() + '</table>');
   });
 </script>
