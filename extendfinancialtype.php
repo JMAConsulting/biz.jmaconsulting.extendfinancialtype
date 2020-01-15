@@ -838,7 +838,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     case "CRM_Contribute_Form_AdditionalPayment":
       // Get last inserted financial trxn if updated.
-      $ft = CRM_EFT_BAO_EFT::getLastTrxnId($form->_id);
+      $ft = CRM_EFT_BAO_EFT::getMostRecentTrxnIds($form->_id);
       if (!empty($ft)) {
         $params = [
           "entity_id" => $ft,
@@ -909,9 +909,9 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
   if ($form->_action & CRM_Core_Action::UPDATE) {
     switch ($formName) {
     case "CRM_Contribute_Form_Contribution":
-      // Get last inserted financial trxn if updated.
-      $ft = CRM_EFT_BAO_EFT::getLastTrxnId($form->_id);
-      if (!empty($ft)) {
+      // Get all inserted Financial Trxns since the most recent one we are aware of.
+      $fts = CRM_EFT_BAO_EFT::getMostRecentTrxnIds($form->_id, FALSE);
+      if (!empty($fts)) {
         $lastFt = CRM_Core_DAO::executeQuery("SELECT ce.chapter_code, ce.fund_code
           FROM civicrm_contribution c
           INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
@@ -919,7 +919,6 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
           WHERE c.id = {$form->_id} ORDER BY ft.id DESC LIMIT 1")->fetchAll()[0];
         $params = [
-          "entity_id" => $ft,
           "entity_table" => "civicrm_financial_trxn",
         ];
         if (!empty($lastFt)) {
@@ -930,7 +929,10 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           $params['chapter'] = 1000;
           $params['fund'] = 1000;
         }
-        CRM_EFT_BAO_EFT::saveChapterFund($params);
+        foreach ($fts as $ft) {
+          $params['entity_id'] = $ft;
+          CRM_EFT_BAO_EFT::saveChapterFund($params);
+        }
       }
       $fi = CRM_Contribute_BAO_Contribution::getLastFinancialItemIds($form->_id)[0];
       $fi = reset($fi);
