@@ -31,7 +31,12 @@
 {literal}
 <script type="text/javascript">
   CRM.$(function ($) {
-    var paymentsTable = $('.payment-details_group').find('table');
+    // the class .payment-details_group only exists in the edit mode so otherwise look for .crm-info-panel
+    if ($('.payment-details_group').length) {
+      var paymentsTable = $('.payment-details_group').find('table');
+    } else {
+      var paymentsTable = $('.crm-info-panel').find('table');
+    }
     $(paymentsTable).replaceWith('<table class="selector row-highlight">' + $('#newPaymentTable').html() + '</table>');
   });
 </script>
