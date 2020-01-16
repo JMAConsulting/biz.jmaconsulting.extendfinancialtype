@@ -481,25 +481,24 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
   /**
    * Get an array of most recent financial item ids
    * @param int $contribution
-   * @param bool $onlyMostRecent
    *
-   * @return int|Array
+   * @return array
    */
-  public static function getMostRecentFinancialItemIds($contributionId, $financialItemId) {
+  public static function getMostRecentFinancialItemIds($contributionId) {
     $sql_params = [
       1 => [$contributionId, 'Positive'],
     ];
-    $lastFi = CRM_Core_DAO::executeQuery("SELECT fi.id
+    $lastFi = CRM_Core_DAO::singleValueQuery("SELECT fi.id
       FROM civicrm_financial_item fi
       INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
       INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = fi.id AND ce.entity_table = 'civicrm_financial_item'
-      WHERE li.contribution_id = %1 ORDER BY fi.id LIMIT 1", $sql_params)->fetchAll()[0];
-    $sql_params[2] = [$financialItemId, 'Positive'];
+      WHERE li.contribution_id = %1 ORDER BY fi.id LIMIT 1", $sql_params);
+    $sql_params[2] = [$lastFi, 'Positive'];
     $fiIds = CRM_Core_DAO::executeQuery("SELECT fi.id
       FROM civicrm_financial_item fi
       INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
       LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = fi.id AND ce.entity_table = 'civicrm_financial_item'
-      WHERE li.contribution_id = %2 AND ce.entity_id IS NULL AND fi.id > %2 ORDER BY fi.id", $sql_params)->fetchAll();
+      WHERE li.contribution_id = %1 AND ce.entity_id IS NULL AND fi.id > %2 ORDER BY fi.id", $sql_params)->fetchAll();
     return $fiIds;
   }
 

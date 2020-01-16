@@ -930,7 +930,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           $params['fund'] = 1000;
         }
         foreach ($fts as $ft) {
-          $params['entity_id'] = $ft;
+          $params['entity_id'] = $ft['id'];
           CRM_EFT_BAO_EFT::saveChapterFund($params);
         }
       }
@@ -944,10 +944,10 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
             INNER JOIN civicrm_line_item li ON li.id = fi.entity_id and fi.entity_table = 'civicrm_line_item'
             INNER JOIN civicrm_chapter_entity ce ON ce.entity_id = fi.id AND ce.entity_table = 'civicrm_financial_item'
             WHERE li.contribution_id = {$form->_id} ORDER BY fi.id DESC LIMIT 1")->fetchAll()[0];
-          $fiIds = CRM_EFT_BAO_EFT::getMostRecentFinancialItemIds($form->_id, $fi);
+          $fiIds = CRM_EFT_BAO_EFT::getMostRecentFinancialItemIds($form->_id);
           foreach ($fiIds as $fiId) {
             $params = [
-              "entity_id" => $fiId,
+              "entity_id" => $fiId['id'],
               "entity_table" => "civicrm_financial_item",
               "chapter" => $lastFi['chapter_code'],
               "fund" => $lastFi['fund_code'],
