@@ -471,7 +471,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
       INNER JOIN civicrm_financial_trxn ft ON ft.id = eft.financial_trxn_id
       LEFT JOIN civicrm_chapter_entity ce ON ce.entity_id = ft.id AND ce.entity_table = 'civicrm_financial_trxn'
-      WHERE c.id = %1 AND ce.entity_id IS NULL $additionalWhere ORDER BY ft.id DESC $limit", $sqlParamsi)->fetchAll();
+      WHERE c.id = %1 AND ce.entity_id IS NULL $additionalWhere ORDER BY ft.id DESC $limit", $sqlParams)->fetchAll();
     if ($onlyMostRecent) {
       return $ft[0];
     }
