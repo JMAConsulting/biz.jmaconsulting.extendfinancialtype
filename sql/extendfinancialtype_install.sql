@@ -27,4 +27,5 @@ ALTER TABLE `civicrm_chapter_entity`
   ADD UNIQUE KEY `entity_index` (`entity_id`,`entity_table`),
   ADD KEY `entity_id` (`entity_id`),
   ADD KEY `chapter_code_index` (`chapter_code`),
-  ADD KEY `fund_code_index` (`fund_code`);
+  ADD KEY `fund_code_index` (`fund_code`),
+  CHANGE `id` `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;

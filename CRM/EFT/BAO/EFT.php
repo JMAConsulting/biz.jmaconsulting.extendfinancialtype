@@ -84,7 +84,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         ];
         self::saveChapterFund($itemParams);
 
-        if ($isPriceSet && $financialItem) {
+        if ($financialItem) {
           // And for the corresponding financial trxn for this contribution.
           $financialTrxn = civicrm_api3('EntityFinancialTrxn', 'get', [
             'return' => "financial_trxn_id",
@@ -106,7 +106,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         ];
         self::saveChapterFund($params);
       }
-      
+
       if (!empty($fts)) {
         return $fts;
       }
@@ -389,8 +389,8 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         $params = [
           "entity_id" => $ft,
           "entity_table" => "civicrm_financial_trxn",
-          "chapter" => CRM_Utils_Array::value('chapter_code_trxn', $cfParams),
-          "fund" => CRM_Utils_Array::value('fund_code_trxn', $cfParams),
+          "chapter" => CRM_Utils_Array::value('chapter_code_trxn', $cfParams, CRM_Utils_Array::value('chapter_code', $cfParams)),
+          "fund" => CRM_Utils_Array::value('fund_code_trxn', $cfParams, CRM_Utils_Array::value('fund_code', $cfParams)),
         ];
         self::saveChapterFund($params);
       }
@@ -465,7 +465,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $additionalWhere = ' AND ft.id > %2';
       $sqlParams[2] = [$mostRecentStoredFT, 'Positive'];
     }
-    $limt = $onlyMostRecent ? 'LIMI 1' : '';
+    $limit = $onlyMostRecent ? 'LIMI 1' : '';
     $ft = CRM_Core_DAO::executeQuery("SELECT ft.id
       FROM civicrm_contribution c
       INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
