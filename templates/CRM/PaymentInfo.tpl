@@ -35,7 +35,7 @@
     if ($('.payment-details_group').length) {
       var paymentsTable = $('.payment-details_group').find('table');
     } else {
-      var paymentsTable = $('.crm-info-panel').find('table');
+      var paymentsTable = $('.crm-info-panel').find('table.selector.row-highlight');
     }
     $(paymentsTable).replaceWith('<table class="selector row-highlight">' + $('#newPaymentTable').html() + '</table>');
   });
