@@ -465,7 +465,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       $additionalWhere = ' AND ft.id > %2';
       $sqlParams[2] = [$mostRecentStoredFT, 'Positive'];
     }
-    $limit = $onlyMostRecent ? 'LIMI 1' : '';
+    $limit = $onlyMostRecent ? 'LIMIT 1' : '';
     $ft = CRM_Core_DAO::executeQuery("SELECT ft.id
       FROM civicrm_contribution c
       INNER JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = c.id AND eft.entity_table = 'civicrm_contribution'
