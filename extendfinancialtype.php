@@ -841,7 +841,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       $ft = CRM_EFT_BAO_EFT::getMostRecentTrxnIds($form->_id);
       if (!empty($ft)) {
         $params = [
-          "entity_id" => $ft,
+          "entity_id" => $ft['id'],
           "entity_table" => "civicrm_financial_trxn",
           "chapter" => $form->_submitValues['chapter_code_trxn'],
           "fund" => $form->_submitValues['fund_code_trxn'],
