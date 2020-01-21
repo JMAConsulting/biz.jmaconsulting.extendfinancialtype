@@ -984,7 +984,6 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
       }
     }
     else {
-      $contributionPageId = $form->_params['contributionPageID'];
       if (!empty($memberItems['isMembership'])) {
         $form->_params['contributionPageID'] = $form->_membershipBlock['entity_id'];
       }
@@ -994,10 +993,10 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
           'chapter_code' => $form->_params['chapter_code'],
           'fund_code' => $originalFund['fund_code'],
         ];
-        $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online", TRUE, $contributionPageId);
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_contributionID, "civicrm_contribution_page_online", TRUE, $form->_id);
         // Add chapter and fund for recurring contributions.
         if (CRM_Utils_Array::value('is_recur', $form->_values)) {
-          CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $originalFund['fund_code'], $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE, $contributionPageId);
+          CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $originalFund['fund_code'], $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE, $form->_id);
         }
         // We save the chapter and fund for membership as well.
         $memChapParams = [
@@ -1011,14 +1010,14 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
         // If there is an other contribution.
         if (!empty($form->_values['contribution_other_id'])) {
           $memberItems['isMembership'] = FALSE;
-          $otherFts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_values['contribution_other_id'], "civicrm_contribution_page_online", TRUE);
+          $otherFts = CRM_EFT_BAO_EFT::addChapterFund($form->_params['chapter_code'], $memberItems, $form->_values['contribution_other_id'], "civicrm_contribution_page_online", TRUE, $form->_id);
         }
       }
       else {
-        $fts = CRM_EFT_BAO_EFT::addChapterFund(NULL, $memberItems, $form->_contributionID, "civicrm_contribution_page_online", FALSE, $contributionPageId);
+        $fts = CRM_EFT_BAO_EFT::addChapterFund(NULL, $memberItems, $form->_contributionID, "civicrm_contribution_page_online", FALSE, $form->_id);
         // Add chapter and fund for recurring contributions.
         if (CRM_Utils_Array::value('is_recur', $form->_values)) {
-          CRM_EFT_BAO_EFT::addChapterFund(NULL, $memberItems, $form->_params['contributionRecurID'], "civicrm_contribution_recur", FALSE, $contributionPageId);
+          CRM_EFT_BAO_EFT::addChapterFund(NULL, $memberItems, $form->_params['contributionRecurID'], "civicrm_contribution_recur", FALSE, $form->_id);
         }
         // Get chapter and fund for payment processor id.
         $paymentProcessorId = CRM_Utils_Array::value('payment_processor_id', $form->_params);
