@@ -42,7 +42,7 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
     return $info;
   }
 
-  public static function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE) {
+  public static function addChapterFund($chapter, $fund, $entityId, $entityTable, $isPriceSet = FALSE, $contributionPageId = NULL) {
     if ($entityTable == "civicrm_line_item") {
       $lineItems = civicrm_api3('LineItem', 'get', [
         'contribution_id' => $entityId,
@@ -124,14 +124,14 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       }
       else {
         if (!$fund['isMembership']) {
-          $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+          $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
         }
         elseif ($fund['isMembership']) {
           $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
           if (empty($chapterFund)) {
-            $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+            $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
           }
           $params['chapter'] = $chapterFund['chapter_code'];
           $params['fund'] = $chapterFund['fund_code'];
@@ -156,13 +156,21 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
           'entity_id' => $lineItem['id'],
           'entity_table' => "civicrm_line_item",
         ];
+        // If a chapter has been passed into this function use that.
+        if (!empty($chapter)) {
+          $params['chapter'] = $chapter;
+        }
         if (!empty($lineItemChapterFund)) {
-          $params['chapter'] = $lineItemChapterFund['chapter_code'];
+          if (empty($params['chapter'])) {
+            $params['chapter'] = $lineItemChapterFund['chapter_code'];
+          }
           $params['fund'] = $lineItemChapterFund['fund_code'];
         }
         elseif (!$fund['isMembership'] && !$isPriceSet) {
-          $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
-          $params['chapter'] = $chapterFund['chapter_code'];
+          $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
+          if (empty($params['chapter'])) {
+            $params['chapter'] = $chapterFund['chapter_code'];
+          }
           $params['fund'] = $chapterFund['fund_code'];
         }
         elseif (!$fund['isMembership'] && $isPriceSet) {
@@ -178,9 +186,11 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         elseif ($fund['isMembership'] && !$isPriceSet) {
           $chapterFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
           if (empty($chapterFund)) {
-            $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+            $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
           }
-          $params['chapter'] = $chapterFund['chapter_code'];
+          if (empty($params['chapter'])) {
+            $params['chapter'] = $chapterFund['chapter_code'];
+          }
           $params['fund'] = $chapterFund['fund_code'];
         }
         elseif ($fund['isMembership'] && $isPriceSet) {
@@ -223,7 +233,11 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
       }
       // Add chapter code for contribution as well.
       if (!$isBypass) {
-        $chapterFund = self::getChapterFund($chapter, "civicrm_contribution_page");
+        $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
+        // Use the supplied chapter if we have it.
+        if (!empty($chapter)) {
+          $chapterFund['chapter_code'] = $chapter;
+        }
       }
       if (!empty($chapterFund)) {
         $params = [
