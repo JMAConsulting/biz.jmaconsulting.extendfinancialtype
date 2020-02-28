@@ -40,6 +40,8 @@ define('MEM_FUND_DEBIT', 'custom_772');
  * @copyright CiviCRM LLC (c) 2004-2019
  */
 
+use CRM_EFT_ExtensionUtil as E;
+
 /**
  * This class provides the functionality for batch entry for contributions/memberships.
  */
@@ -140,7 +142,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
    */
   public function buildQuickForm() {
     if (!$this->_profileId) {
-      CRM_Core_Error::fatal(ts('Profile for bulk data entry is missing.'));
+      CRM_Core_Error::fatal(E::ts('Profile for bulk data entry is missing.'));
     }
 
     $this->addElement('hidden', 'batch_id', $this->_batchId);
@@ -148,14 +150,14 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     $batchTypes = CRM_Core_Pseudoconstant::get('CRM_Batch_DAO_Batch', 'type_id', array('flip' => 1), 'validate');
     // get the profile information
     if ($this->_batchInfo['type_id'] == $batchTypes['Contribution']) {
-      CRM_Utils_System::setTitle(ts('Batch Data Entry for Contributions'));
+      CRM_Utils_System::setTitle(E::ts('Batch Data Entry for Contributions'));
       $customFields = CRM_Core_BAO_CustomField::getFields('Contribution');
     }
     elseif ($this->_batchInfo['type_id'] == $batchTypes['Membership']) {
-      CRM_Utils_System::setTitle(ts('Batch Data Entry for Memberships'));
+      CRM_Utils_System::setTitle(E::ts('Batch Data Entry for Memberships'));
     }
     elseif ($this->_batchInfo['type_id'] == $batchTypes['Pledge Payment']) {
-      CRM_Utils_System::setTitle(ts('Batch Data Entry for Pledge Payments'));
+      CRM_Utils_System::setTitle(E::ts('Batch Data Entry for Pledge Payments'));
     }
     $this->_fields = array();
     $this->_fields = CRM_Core_BAO_UFGroup::getFields($this->_profileId, FALSE, CRM_Core_Action::VIEW);
@@ -182,18 +184,18 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
 
     $this->addElement('submit',
       $forceSave,
-      ts('Ignore Mismatch & Process the Batch?')
+      E::ts('Ignore Mismatch & Process the Batch?')
     );
 
     $this->addButtons(array(
         array(
           'type' => 'upload',
-          'name' => ts('Validate & Process the Batch'),
+          'name' => E::ts('Validate & Process the Batch'),
           'isDefault' => TRUE,
         ),
         array(
           'type' => 'cancel',
-          'name' => ts('Save & Continue Later'),
+          'name' => E::ts('Save & Continue Later'),
         ),
       )
     );
@@ -214,22 +216,22 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     for ($rowNumber = 1; $rowNumber <= $this->_batchInfo['item_count']; $rowNumber++) {
       $this->addEntityRef("primary_contact_id[{$rowNumber}]", '', array(
           'create' => TRUE,
-          'placeholder' => ts('- select -'),
+          'placeholder' => E::ts('- select -'),
         ));
 
       // special field specific to membership batch udpate
       if ($this->_batchInfo['type_id'] == 2) {
         $options = array(
-          1 => ts('Add Membership'),
-          2 => ts('Renew Membership'),
+          1 => E::ts('Add Membership'),
+          2 => E::ts('Renew Membership'),
         );
         $this->add('select', "member_option[$rowNumber]", '', $options);
       }
       if ($this->_batchInfo['type_id'] == $batchTypes['Pledge Payment']) {
         $options = array('' => '-select-');
         $optionTypes = array(
-          '1' => ts('Adjust Pledge Payment Schedule?'),
-          '2' => ts('Adjust Total Pledge Amount?'),
+          '1' => E::ts('Adjust Pledge Payment Schedule?'),
+          '2' => E::ts('Adjust Total Pledge Amount?'),
         );
         $this->add('select', "option_type[$rowNumber]", NULL, $optionTypes);
         if (!empty($this->_batchId) && !empty($this->_batchInfo['data']) && !empty($rowNumber)) {
@@ -265,7 +267,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     // There may be a more accurate way to do this...
     $offset = 50; // set an offset to account for other vars we are not counting
     if ((count($this->_elementIndex) + $offset) > ini_get("max_input_vars")) {
-      CRM_Core_Error::fatal(ts('Batch size is too large. Increase value of php.ini setting "max_input_vars" (current val = ' . ini_get("max_input_vars") . ')'));
+      CRM_Core_Error::fatal(E::ts('Batch size is too large. Increase value of php.ini setting "max_input_vars" (current val = ' . ini_get("max_input_vars") . ')'));
     }
 
     $this->assign('fields', $this->_fields);
@@ -281,7 +283,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     $buttonName = $this->controller->getButtonName('submit');
 
     if ($suppressFields && $buttonName != '_qf_Entry_next') {
-      CRM_Core_Session::setStatus(ts("File type field(s) in the selected profile are not supported for Update multiple records."), ts('Some Fields Excluded'), 'info');
+      CRM_Core_Session::setStatus(E::ts("File type field(s) in the selected profile are not supported for Update multiple records."), E::ts('Some Fields Excluded'), 'info');
     }
   }
 
@@ -302,21 +304,21 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     $errors = array();
     $batchTypes = CRM_Core_Pseudoconstant::get('CRM_Batch_DAO_Batch', 'type_id', array('flip' => 1), 'validate');
     $fields = array(
-      'total_amount' => ts('Amount'),
-      'financial_type' => ts('Financial Type'),
-      'payment_instrument' => ts('Payment Method'),
+      'total_amount' => E::ts('Amount'),
+      'financial_type' => E::ts('Financial Type'),
+      'payment_instrument' => E::ts('Payment Method'),
     );
 
     //CRM-16480 if contact is selected, validate financial type and amount field.
     foreach ($params['field'] as $key => $value) {
       if (isset($value['trxn_id'])) {
         if (0 < CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contribution WHERE trxn_id = %1', array(1 => array($value['trxn_id'], 'String')))) {
-          $errors["field[$key][trxn_id]"] = ts('Transaction ID must be unique within the database');
+          $errors["field[$key][trxn_id]"] = E::ts('Transaction ID must be unique within the database');
         }
       }
       foreach ($fields as $field => $label) {
         if (!empty($params['primary_contact_id'][$key]) && empty($value[$field])) {
-          $errors["field[$key][$field]"] = ts('%1 is a required field.', array(1 => $label));
+          $errors["field[$key][$field]"] = E::ts('%1 is a required field.', array(1 => $label));
         }
       }
     }
@@ -334,16 +336,16 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
 
       //validate for soft credit fields
       if (!empty($params['soft_credit_contact_id'][$key]) && empty($params['soft_credit_amount'][$key])) {
-        $errors["soft_credit_amount[$key]"] = ts('Please enter the soft credit amount.');
+        $errors["soft_credit_amount[$key]"] = E::ts('Please enter the soft credit amount.');
       }
       if (!empty($params['soft_credit_amount']) && !empty($params['soft_credit_amount'][$key]) && CRM_Utils_Rule::cleanMoney(CRM_Utils_Array::value($key, $params['soft_credit_amount'])) > CRM_Utils_Rule::cleanMoney($value['total_amount'])) {
-        $errors["soft_credit_amount[$key]"] = ts('Soft credit amount should not be greater than the total amount');
+        $errors["soft_credit_amount[$key]"] = E::ts('Soft credit amount should not be greater than the total amount');
       }
 
       //membership type is required for membership batch entry
       if ($self->_batchInfo['type_id'] == $batchTypes['Membership']) {
         if (empty($value['membership_type'][1])) {
-          $errors["field[$key][membership_type]"] = ts('Membership type is a required field.');
+          $errors["field[$key][membership_type]"] = E::ts('Membership type is a required field.');
         }
       }
     }
@@ -354,14 +356,14 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
         }
         if (!empty($duplicateRows) && count($duplicateRows) > 1) {
           foreach ($duplicateRows as $key) {
-            $errors["open_pledges[$key]"] = ts('You can not record two payments for the same pledge in a single batch.');
+            $errors["open_pledges[$key]"] = E::ts('You can not record two payments for the same pledge in a single batch.');
           }
         }
       }
     }
     if ((string) $batchTotal != $self->_batchInfo['total']) {
       $self->assign('batchAmountMismatch', TRUE);
-      $errors['_qf_defaults'] = ts('Total for amounts entered below does not match the expected batch total.');
+      $errors['_qf_defaults'] = E::ts('Total for amounts entered below does not match the expected batch total.');
     }
 
     if (!empty($errors)) {
@@ -443,7 +445,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     CRM_Batch_BAO_Batch::create($paramValues);
 
     // set success status
-    CRM_Core_Session::setStatus("", ts("Batch Processed."), "success");
+    CRM_Core_Session::setStatus("", E::ts("Batch Processed."), "success");
 
     CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/batch', 'reset=1'));
   }
