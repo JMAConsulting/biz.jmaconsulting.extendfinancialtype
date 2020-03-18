@@ -7,6 +7,8 @@ define('MEMBERSHIPFIELD', 23);
 
 require_once 'extendfinancialtype.civix.php';
 
+use CRM_EFT_ExtensionUtil as E;
+
 /**
  * Implementation of hook_civicrm_config
  *
@@ -124,7 +126,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     asort($chapters);
 
     $form->add('select', 'chapter_code',
-      ts('Chapter/Fund'), $chapters, TRUE, array('class' => 'crm-select2 ')
+      E::ts('Chapter/Fund'), $chapters, TRUE, array('class' => 'crm-select2 ')
     );
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => 'CRM/RaiseTheFlag.tpl',
@@ -270,7 +272,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_chapter_code[' . $i . ']',
-        ts('Chapter Code'),
+        E::ts('Chapter Code'),
         $chapterCodes
       );
     }
@@ -279,7 +281,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     for ($i = 1; $i <= 15; $i++) {
       $form->add('select', 'option_fund_code[' . $i . ']',
-        ts('Fund Code'),
+        E::ts('Fund Code'),
         $fundCodes
       );
     }
@@ -329,7 +331,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $chapters = array_intersect($chapters, $validChapters);
       $chapters = [1000 => "Provincial Office"] + $chapters;
       $form->add('select', 'chapter_code',
-        ts('Chapter'), $chapters, FALSE, array('class' => 'crm-select2 ')
+        E::ts('Chapter'), $chapters, FALSE, array('class' => 'crm-select2 ')
       );
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => 'CRM/EFT/AddChapterMem.tpl',
@@ -351,11 +353,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     }
     $form->setDefaults($defaults);
     $form->add('select', 'chapter_code',
-      ts('Chapter Code'),
+      E::ts('Chapter Code'),
       $chapterCodes
     );
     $form->add('select', 'fund_code',
-      ts('Fund Code'),
+      E::ts('Fund Code'),
       $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
@@ -380,11 +382,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $form->setDefaults(['chapter_code' => 1000, 'fund_code' => 1000]);
     }
     $form->add('select', 'chapter_code',
-      ts('Chapter Code'),
+      E::ts('Chapter Code'),
       $chapterCodes
     );
     $form->add('select', 'fund_code',
-      ts('Fund Code'),
+      E::ts('Fund Code'),
       $fundCodes
     );
     if ($formName == "CRM_Contribute_Form_AdditionalPayment") {
@@ -399,13 +401,13 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
     // Add chapter codes.
     $chapterCodes = CRM_EFT_BAO_EFT::getCodes('chapter_codes');
     $form->add('select', 'chapter_code',
-      ts('Chapter Code'),
+      E::ts('Chapter Code'),
       $chapterCodes
     );
     // Add fund codes.
     $fundCodes = CRM_Core_OptionGroup::values('fund_codes');
     $form->add('select', 'fund_code',
-      ts('Fund Code'),
+      E::ts('Fund Code'),
       $fundCodes
     );
     $form->assign('isPaymentProcessor', TRUE);
@@ -488,11 +490,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       $form->setDefaults(['chapter_code_trxn' => 1000, 'fund_code_trxn' => 1000]);
     }
     $form->add('select', 'chapter_code_trxn',
-      ts('Chapter Code'),
+      E::ts('Chapter Code'),
       $chapterCodes
     );
     $form->add('select', 'fund_code_trxn',
-      ts('Fund Code'),
+      E::ts('Fund Code'),
       $fundCodes
     );
     CRM_Core_Region::instance('page-body')->add(array(
@@ -1070,12 +1072,12 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       $var['civicrm_contribution']['fields']['fund_id'] = array(
         'name' => 'fund_id',
         'type' => CRM_Utils_Type::T_STRING,
-        'title' => ts('Fund ID'),
+        'title' => E::ts('Fund ID'),
         'dbAlias' => "CONCAT(cfa.accounting_code, '-', cefa.chapter_code)",
       );
       $var['civicrm_contribution']['fields']['first_time_contribution'] = array(
         'name' => 'first_time_contribution',
-        'title' => ts('First Time Contribution amount and date'),
+        'title' => E::ts('First Time Contribution amount and date'),
         'dbAlias' => "(
           SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%D %M %Y\"))
            FROM civicrm_contribution cc
@@ -1084,7 +1086,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       );
       $var['civicrm_contribution']['fields']['last_time_contribution'] = array(
         'name' => 'last_time_contribution',
-        'title' => ts('Last Time Contribution amount and date'),
+        'title' => E::ts('Last Time Contribution amount and date'),
         'dbAlias' => "(
           SELECT CONCAT('$', cc.total_amount, ' <br/>', DATE_FORMAT(DATE(cc.receive_date), \"%D %M %Y\"))
            FROM civicrm_contribution cc
@@ -1093,7 +1095,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       );
       $var['civicrm_contribution']['fields']['total_contribution'] = array(
         'name' => 'total_contribution',
-        'title' => ts('Total Contribution(s)'),
+        'title' => E::ts('Total Contribution(s)'),
         'dbAlias' => "(
           SELECT COUNT(DISTINCT cc.id)
            FROM civicrm_contribution cc
@@ -1102,17 +1104,17 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
       );
       $var['civicrm_contribution']['filters']['fund_id'] = array(
         'name' => 'fund_id',
-        'title' => ts('Fund ID (Fund Code)'),
+        'title' => E::ts('Fund ID (Fund Code)'),
         'type' => CRM_Utils_Type::T_STRING,
         'dbAlias' => "cefa.chapter_code",
       );
       $var['civicrm_financial_trxn']['fields']['pan_truncation'] = array(
         'name' => 'pan_truncation',
-        'title' => ts('Last 4 digits of the card'),
+        'title' => E::ts('Last 4 digits of the card'),
       );
       $var['civicrm_contribution']['fields']['invoice_id'] = array(
         'name' => 'invoice_id',
-        'title' => ts('Invoice Number'),
+        'title' => E::ts('Invoice Number'),
         'dbAlias' => "SUBSTRING(contribution_civireport.invoice_id, -10)",
       );
     }
@@ -1144,27 +1146,27 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
     if ($varType == 'columns') {
       $var['civicrm_chapter_entity']['fields']['chapter_code_from'] = array(
         'name' => 'chapter_code_from',
-        'title' => ts('Chapter Code - Credit'),
+        'title' => E::ts('Chapter Code - Credit'),
         'dbAlias' => 'CONCAT(ce_from.chapter_code, " ", covc_from.label)',
       );
       $var['civicrm_chapter_entity']['fields']['chapter_code_to'] = array(
         'name' => 'chapter_code_to',
-        'title' => ts('Chapter Code - Debit'),
+        'title' => E::ts('Chapter Code - Debit'),
         'dbAlias' => 'CONCAT(ce_to.chapter_code, " ", covc_to.label)',
       );
       $var['civicrm_chapter_entity']['fields']['fund_code_from'] = array(
         'name' => 'fund_code_from',
-        'title' => ts('Fund Code - Credit'),
+        'title' => E::ts('Fund Code - Credit'),
         'dbAlias' => 'CONCAT(ce_from.fund_code, " ", covf_from.label)',
       );
       $var['civicrm_chapter_entity']['fields']['fund_code_to'] = array(
         'name' => 'fund_code_to',
-        'title' => ts('Fund Code - Debit'),
+        'title' => E::ts('Fund Code - Debit'),
         'dbAlias' => 'CONCAT(ce_to.fund_code, " ", covf_to.label)',
       );
       $var['civicrm_chapter_entity']['fields']['fund_id'] = array(
         'name' => 'fund_id',
-        'title' => ts('Fund ID'),
+        'title' => E::ts('Fund ID'),
         'default' => TRUE,
         'dbAlias' => 'CASE
           WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
@@ -1192,7 +1194,7 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
     if ($varType == 'columns') {
       $var['civicrm_chapter_entity']['fields']['membership_chapter'] = array(
         'name' => 'membership_chapter',
-        'title' => ts('Membership for which chapter'),
+        'title' => E::ts('Membership for which chapter'),
         'dbAlias' => 'covc.label',
       );
     }
