@@ -329,7 +329,11 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       ];
       asort($chapters);
       $chapters = array_intersect_key($chapters, $validChapters);
-      $chapters = [1000 => "Provincial Office"] + $chapters;
+      $provincial = "Provincial Office";
+      if (\Drupal::languageManager()->getCurrentLanguage()->getId() == 'fr') {
+        $provincial = "Bureau provincial";
+      }
+      $chapters = [1000 => $provincial] + $chapters;
       $form->add('select', 'chapter_code',
         E::ts('Chapter'), $chapters, FALSE, array('class' => 'crm-select2 ')
       );
