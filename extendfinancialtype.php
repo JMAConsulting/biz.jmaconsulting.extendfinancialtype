@@ -306,29 +306,29 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
       // This is a membership page, so we add the chapter dropdown by default.
       $chapters = CRM_Core_OptionGroup::values('chapter_codes');
       $validChapters = [
-        "Provincial Office",
-        "Central West (Peel, Wellington, Waterloo, Halton, Hamilton)",
-        "Chatham",
-        "Durham",
-        "Grey/Bruce",
-        "Huron Perth",
-        "Kingston",
-        "London",
-        "Metro Toronto",
-        "Niagara Region",
-        "North East",
-        "Ottawa",
-        "Peterborough",
-        "Sault St. Marie",
-        "Simcoe",
-        "Sudbury & District",
-        "Thunder Bay & District",
-        "Upper Canada",
-        "Windsor/Essex",
-        "York Region",
+        1000 => "Provincial Office",
+        1040 => "Central West (Peel, Wellington, Waterloo, Halton, Hamilton)",
+        1003 => "Chatham",
+        1005 => "Durham",
+        1006 => "Grey/Bruce",
+        1009 => "Huron Perth",
+        1010 => "Kingston",
+        1011 => "London",
+        1012 => "Toronto",
+        1013 => "Niagara",
+        1014 => "North East",
+        1015 => "Ottawa",
+        1017 => "Peterborough",
+        1021 => "Sault St. Marie",
+        1022 => "Simcoe",
+        1023 => "Sudbury & District",
+        1025 => "Thunder Bay & District",
+        1026 => "Upper Canada",
+        1030 => "Windsor/Essex",
+        1031 => "York Region",
       ];
       asort($chapters);
-      $chapters = array_intersect($chapters, $validChapters);
+      $chapters = array_intersect_key($chapters, $validChapters);
       $chapters = [1000 => "Provincial Office"] + $chapters;
       $form->add('select', 'chapter_code',
         E::ts('Chapter'), $chapters, FALSE, array('class' => 'crm-select2 ')
@@ -964,6 +964,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     }
   }
 
+  
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
     $manualChapter = [];
