@@ -315,7 +315,7 @@ function extendfinancialtype_civicrm_buildForm($formName, &$form) {
         1010 => "Kingston",
         1011 => "London",
         1012 => "Toronto",
-        1013 => "Niagara",
+        1013 => "Niagara Region",
         1014 => "North East",
         1015 => "Ottawa",
         1017 => "Peterborough",
