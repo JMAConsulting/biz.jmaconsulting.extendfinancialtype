@@ -570,6 +570,14 @@ function extendfinancialtype_civicrm_pre($op, $objectName, $objectId, &$objectRe
       $objectRef['financial_type_id'] = $ft;
     }
   }
+  // Ensure that Contribution Recur objects have the same financial type as for the linked Contribution.
+  if ($objectName == 'ContributionRecur' && $op == 'create') {
+    $giftType = CRM_Core_Session::singleton()->get('giftType');
+    list($code, $ft) = addGiftFT($giftType);
+    if (!empty($ft)) {
+      $objectRef['financial_type_id'] = $ft;
+    }
+  }
 }
 
 function addGiftFT($giftType) {
@@ -979,7 +987,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
     if ($form->_id == DONATION_PAGE) {
       if ($submitChapter = CRM_Utils_Array::value('chapter_code', $form->_params, NULL)) {
-        $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, "civicrm_line_item", TRUE);
+        $fts = CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_contributionID, 'civicrm_contribution_page_online', TRUE, $form->_id);
         // Add chapter and fund for recurring contributions.
         if (CRM_Utils_Array::value('is_recur', $form->_values)) {
           CRM_EFT_BAO_EFT::addChapterFund($submitChapter, $submitChapter, $form->_params['contributionRecurID'], "civicrm_contribution_recur", TRUE, $form->_id);

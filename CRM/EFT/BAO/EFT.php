@@ -160,18 +160,25 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         if (!empty($chapter)) {
           $params['chapter'] = $chapter;
         }
+        if (!empty($fund) && !is_array($fund)) {
+          $params['fund'] = $fund;
+        }
         if (!empty($lineItemChapterFund)) {
           if (empty($params['chapter'])) {
             $params['chapter'] = $lineItemChapterFund['chapter_code'];
           }
-          $params['fund'] = $lineItemChapterFund['fund_code'];
+          if (empty($params['fund'])) {
+            $params['fund'] = $lineItemChapterFund['fund_code'];
+          }
         }
         elseif (!$fund['isMembership'] && !$isPriceSet) {
           $chapterFund = self::getChapterFund($contributionPageId, "civicrm_contribution_page");
           if (empty($params['chapter'])) {
             $params['chapter'] = $chapterFund['chapter_code'];
           }
-          $params['fund'] = $chapterFund['fund_code'];
+          if (empty($params['fund'])) {
+            $params['fund'] = $chapterFund['fund_code'];
+          }
         }
         elseif (!$fund['isMembership'] && $isPriceSet) {
           $originalFund = self::getChapterFund($fund['memType'], "civicrm_membership_type");
@@ -237,6 +244,10 @@ class CRM_EFT_BAO_EFT extends CRM_EFT_DAO_EFT {
         // Use the supplied chapter if we have it.
         if (!empty($chapter)) {
           $chapterFund['chapter_code'] = $chapter;
+        }
+        // Use the supplied fund if we have it.
+        if (!empty($fund) && !is_array($fund)) {
+          $chapterFund['fund_code'] = $fund;
         }
       }
       if (!empty($chapterFund)) {
