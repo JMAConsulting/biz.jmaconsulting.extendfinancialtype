@@ -909,7 +909,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
 
   if ($formName == "CRM_Event_Form_Participant" && ($form->_action & CRM_Core_Action::ADD)) {
     // Add chapter, fund code for participant.
-    $eventId = $form->getVar('_eventId');
+    $eventId = $form->getVar('_eventId') ?: CRM_Utils_Array::value('event_id', $form->_submitValues);
     $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code FROM civicrm_chapter_entity WHERE entity_id = {$eventId} AND entity_table = 'civicrm_event'")->fetchAll();
     if (!empty($chapterFund)) {
       CRM_EFT_BAO_EFT::addChapterFund($chapterFund[0]['chapter_code'], $chapterFund[0]['fund_code'], $form->_id, "civicrm_participant");
@@ -976,7 +976,7 @@ function extendfinancialtype_civicrm_postProcess($formName, &$form) {
     }
   }
 
-  
+
   // Front End Forms.
   if ($formName == "CRM_Contribute_Form_Contribution_Confirm") {
     $manualChapter = [];
