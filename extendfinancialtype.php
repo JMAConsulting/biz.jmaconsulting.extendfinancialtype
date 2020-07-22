@@ -1221,3 +1221,17 @@ function extendfinancialtype_civicrm_alterReportVar($varType, &$var, &$object) {
     }
   }
 }
+
+/**
+ * Implements hook_civicrm_preProcess().
+ *
+ * This is done to ensure that if giftType has been set in the session it doesn't affect other areas like line item editor
+ */
+function extendfinancialtype_civicrm_preProcess($formName, &$form) {
+  if ($formName !== 'CRM_Contribute_Form_Contribution_Main' && $formName !== 'CRM_Contribute_Form_Contribution_Confirm') {
+    $giftType = CRM_Core_Session::singleton()->get('giftType');
+    if (!empty($giftType)) {
+      CRM_Core_Session::singleton()->set('giftType', FALSE);
+    }
+  }
+}
