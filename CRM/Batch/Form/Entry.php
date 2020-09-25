@@ -142,7 +142,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
    */
   public function buildQuickForm() {
     if (!$this->_profileId) {
-      CRM_Core_Error::fatal(E::ts('Profile for bulk data entry is missing.'));
+      throw new CRM_Core_Exception(E::ts('Profile for bulk data entry is missing.'));
     }
 
     $this->addElement('hidden', 'batch_id', $this->_batchId);
@@ -267,7 +267,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     // There may be a more accurate way to do this...
     $offset = 50; // set an offset to account for other vars we are not counting
     if ((count($this->_elementIndex) + $offset) > ini_get("max_input_vars")) {
-      CRM_Core_Error::fatal(E::ts('Batch size is too large. Increase value of php.ini setting "max_input_vars" (current val = ' . ini_get("max_input_vars") . ')'));
+      throw new CRM_Core_Exception(E::ts('Batch size is too large. Increase value of php.ini setting "max_input_vars" (current val = ' . ini_get("max_input_vars") . ')'));
     }
 
     $this->assign('fields', $this->_fields);
@@ -869,7 +869,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
             ]);
           }
           CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $trxnChapterFund);
-          
+
           $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code
             FROM civicrm_chapter_entity WHERE entity_id = {$membership->membership_type_id} AND entity_table = 'civicrm_membership_type'")->fetchAll();
           if (!empty($chapterFund)) {
@@ -940,7 +940,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
           }
           $fts = CRM_EFT_BAO_EFT::addChapterFund($chapterCredit, $fundCredit, $contributionId, "civicrm_line_item", TRUE);
           CRM_EFT_BAO_EFT::addTrxnChapterFund($fts, $trxnChapterFund);
-          
+
           $chapterFund = CRM_Core_DAO::executeQuery("SELECT chapter_code, fund_code
             FROM civicrm_chapter_entity WHERE entity_id = {$membership->membership_type_id} AND entity_table = 'civicrm_membership_type'")->fetchAll();
           if (!empty($chapterFund)) {
